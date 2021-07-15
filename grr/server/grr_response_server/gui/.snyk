@@ -1,0 +1,63 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.21.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - karma > connect > body-parser > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > compression > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > connect-timeout > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > express-session > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > morgan > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-index > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-static > send > debug:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:mime:20170907':
+    - karma > connect > serve-static > send > mime:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:minimatch:20160620':
+    - grunt-contrib-watch > gaze > globule > minimatch:
+        patched: '2021-07-15T20:51:27.143Z'
+    - grunt-contrib-watch > gaze > globule > glob > minimatch:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:ms:20170412':
+    - karma > connect > connect-timeout > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > body-parser > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > compression > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > connect-timeout > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > express-session > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > morgan > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-index > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-static > send > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-static > send > debug > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-favicon > ms:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:negotiator:20160616':
+    - karma > connect > compression > accepts > negotiator:
+        patched: '2021-07-15T20:51:27.143Z'
+    - karma > connect > serve-index > accepts > negotiator:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:qs:20140806-1':
+    - grunt-contrib-watch > tiny-lr-fork > qs:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:uglify-js:20151024':
+    - grunt-html2js > jade > transformers > uglify-js:
+        patched: '2021-07-15T20:51:27.143Z'
+  'npm:ws:20160920':
+    - karma > socket.io > socket.io-client > ws:
+        patched: '2021-07-15T20:51:27.143Z'
