@@ -19,7 +19,8 @@
     "jstree": "3.3.10",
     "marked": "^0.7.0",
     "moment": "^2.27.0",
-    "split.js": "1.6.1"
+    "split.js": "1.6.1",
+    "snyk": "^1.662.0"
   },
   "devDependencies": {
     "angular-mocks": "1.8.0",
@@ -36,10 +37,10 @@
     "gulp-less": "^4.0.1",
     "gulp-newer": "^1.4.0",
     "gulp-plumber": "^1.2.1",
-    "gulp-sass": "^4.1.0",
+    "gulp-sass": "^5.0.0",
     "gulp-sourcemaps": "^2.6.5",
     "jasmine-core": "^3.5.0",
-    "karma": "^4.3.0",
+    "karma": "^6.0.0",
     "karma-chrome-launcher": "^3.1.0",
     "karma-jasmine": "^2.0.1",
     "karma-ng-html2js-preprocessor": "^1.0.0",
@@ -50,12 +51,15 @@
     "url": "git+ssh://git@github.com/google/grr.git"
   },
   "scripts": {
-    "gulp": "./node_modules/gulp/bin/gulp.js"
+    "gulp": "./node_modules/gulp/bin/gulp.js",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "author": "Mikhail Bushkov",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/google/grr/issues"
   },
-  "homepage": "https://github.com/google/grr#readme"
+  "homepage": "https://github.com/google/grr#readme",
+  "snyk": true
 }
