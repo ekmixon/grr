@@ -55,9 +55,8 @@ def FindProxies():
         settings, "kSCPropNetProxiesProxyAutoConfigEnable")
 
     if cf_auto_enabled and bool(sc.CFNumToInt32(cf_auto_enabled)):
-      cfurl = sc.CFDictRetrieve(settings,
-                                "kSCPropNetProxiesProxyAutoConfigURLString")
-      if cfurl:
+      if cfurl := sc.CFDictRetrieve(
+          settings, "kSCPropNetProxiesProxyAutoConfigURLString"):
         unused_url = sc.CFStringToPystring(cfurl)
         # TODO(amoser): Auto config is enabled, what is the plan here?
         # Basically, all we get is the URL of a javascript file. To get the
@@ -73,12 +72,10 @@ def FindProxies():
 
 def GetMountpoints():
   """List all the filesystems mounted on the system."""
-  devices = {}
-
-  for filesys in GetFileSystems():
-    devices[filesys.f_mntonname] = (filesys.f_mntfromname, filesys.f_fstypename)
-
-  return devices
+  return {
+      filesys.f_mntonname: (filesys.f_mntfromname, filesys.f_fstypename)
+      for filesys in GetFileSystems()
+  }
 
 
 class StatFSStruct(utils.Struct):
@@ -174,7 +171,7 @@ def ParseFileSystemsStruct(struct_class, fs_count, data):
   """Take the struct type and parse it into a list of structs."""
   results = []
   cstr = lambda x: x.split(b"\x00", 1)[0]
-  for count in range(0, fs_count):
+  for count in range(fs_count):
     struct_size = struct_class.GetSize()
     s_data = data[count * struct_size:(count + 1) * struct_size]
     s = struct_class(s_data)
@@ -220,7 +217,7 @@ class OSXVersion(object):
   def __init__(self):
     self.version = platform.mac_ver()[0]
     self.splitversion = self.version.split(".")
-    self.majorminor = self.splitversion[0:2]
+    self.majorminor = self.splitversion[:2]
 
   def VersionAsMajorMinor(self):
     """Get version as major minor array.

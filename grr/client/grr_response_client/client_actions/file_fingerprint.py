@@ -46,29 +46,22 @@ class FingerprintFile(standard.ReadBuffer):
   def Run(self, args):
     """Fingerprint a file."""
     with vfs.VFSOpen(
-        args.pathspec, progress_callback=self.Progress) as file_obj:
+          args.pathspec, progress_callback=self.Progress) as file_obj:
       fingerprinter = Fingerprinter(self.Progress, file_obj)
       response = rdf_client_action.FingerprintResponse()
       response.pathspec = file_obj.pathspec
-      if args.tuples:
-        tuples = args.tuples
-      else:
-        # There are none selected -- we will cover everything
-        tuples = list()
-        for k in self._fingerprint_types:
-          tuples.append(rdf_client_action.FingerprintTuple(fp_type=k))
-
+      tuples = args.tuples or [
+          rdf_client_action.FingerprintTuple(fp_type=k)
+          for k in self._fingerprint_types
+      ]
       for finger in tuples:
         hashers = [self._hash_types[h] for h in finger.hashers] or None
-        if finger.fp_type in self._fingerprint_types:
-          invoke = self._fingerprint_types[finger.fp_type]
-          res = invoke(fingerprinter, hashers)
-          if res:
-            response.matching_types.append(finger.fp_type)
-        else:
-          raise RuntimeError(
-              "Encountered unknown fingerprint type. %s" % finger.fp_type)
+        if finger.fp_type not in self._fingerprint_types:
+          raise RuntimeError(f"Encountered unknown fingerprint type. {finger.fp_type}")
 
+        invoke = self._fingerprint_types[finger.fp_type]
+        if res := invoke(fingerprinter, hashers):
+          response.matching_types.append(finger.fp_type)
       # Structure of the results is a list of dicts, each containing the
       # name of the hashing method, hashes for enabled hash algorithms,
       # and auxilliary data where present (e.g. signature blobs).
@@ -85,9 +78,8 @@ class FingerprintFile(standard.ReadBuffer):
 
         if result["name"] == "pecoff":
           for hash_type in ["md5", "sha1", "sha256"]:
-            value = result.GetItem(hash_type)
-            if value:
-              setattr(response.hash, "pecoff_" + hash_type, value)
+            if value := result.GetItem(hash_type):
+              setattr(response.hash, f"pecoff_{hash_type}", value)
 
           signed_data = result.GetItem("SignedData", [])
           for data in signed_data:

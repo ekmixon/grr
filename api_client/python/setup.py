@@ -63,17 +63,22 @@ setup_args = dict(
     },
     packages=find_packages(),
     entry_points={
-        "console_scripts": ["grr_api_shell = grr_api_client.api_shell:main",]
+        "console_scripts": [
+            "grr_api_shell = grr_api_client.api_shell:main",
+        ]
     },
     install_requires=[
-        "grr_response_proto==%s" % VERSION.get("Version", "packagedepends"),
+        f'grr_response_proto=={VERSION.get("Version", "packagedepends")}',
         "cryptography==2.9.2",
         "requests==2.23.0",
         "Werkzeug>=0.16.0,<=1.0.1",
     ],
     extra_requires={
-        "shell": ["ipython==7.15.0",],
+        "shell": [
+            "ipython==7.15.0",
+        ],
     },
-    data=["version.ini"])
+    data=["version.ini"],
+)
 
 setup(**setup_args)

@@ -184,15 +184,13 @@ class TemplateBuilder(object):
       elif "Target:LinuxRpm" in context:
         return builders.CentosClientBuilder(context=context)
       else:
-        parser.error("Bad build context: %s" % context)
+        parser.error(f"Bad build context: {context}")
     except AttributeError:
       raise RuntimeError("Unable to build for platform %s when running "
                          "on current platform." % self.platform)
 
   def GetArch(self):
-    if platform.architecture()[0] == "32bit":
-      return "i386"
-    return "amd64"
+    return "i386" if platform.architecture()[0] == "32bit" else "amd64"
 
   def GetPackageFormat(self):
     if platform.system() == "Linux":
@@ -208,12 +206,12 @@ class TemplateBuilder(object):
   def BuildTemplate(self, context=None, output=None):
     """Find template builder and call it."""
     context = context or []
-    context.append("Arch:%s" % self.GetArch())
+    context.append(f"Arch:{self.GetArch()}")
     # Platform context has common platform settings, Target has template build
     # specific stuff.
     self.platform = platform.system()
-    context.append("Platform:%s" % self.platform)
-    context.append("Target:%s" % self.platform)
+    context.append(f"Platform:{self.platform}")
+    context.append(f"Target:{self.platform}")
     if "Target:Linux" in context:
       context.append(self.GetPackageFormat())
 
@@ -332,16 +330,15 @@ class MultiTemplateRepacker(object):
           elif template.endswith(".rpm.zip"):
             bulk_sign_installers = True
 
-        print("Calling %s" % " ".join(repack_args))
+        print(f'Calling {" ".join(repack_args)}')
         results.append(
             pool.apply_async(SpawnProcess, (repack_args,), dict(passwd=passwd)))
 
         # Also build debug if it's windows.
         if template.endswith(".exe.zip"):
-          debug_args = []
-          debug_args.extend(repack_args)
+          debug_args = list(repack_args)
           debug_args.append("--debug_build")
-          print("Calling %s" % " ".join(debug_args))
+          print(f'Calling {" ".join(debug_args)}')
           results.append(
               pool.apply_async(SpawnProcess, (debug_args,),
                                dict(passwd=passwd)))
@@ -372,13 +369,16 @@ class MultiTemplateRepacker(object):
       if to_sign.get("windows"):
         signer = repacking.TemplateRepacker().GetSigner([
             "ClientBuilder Context",
-            "Platform:%s" % platform.system(), "Target:Windows"
+            f"Platform:{platform.system()}",
+            "Target:Windows",
         ])
         signer.SignFiles(to_sign.get("windows"))
       if to_sign.get("rpm"):
         signer = repacking.TemplateRepacker().GetSigner([
             "ClientBuilder Context",
-            "Platform:%s" % platform.system(), "Target:Linux", "Target:LinuxRpm"
+            f"Platform:{platform.system()}",
+            "Target:Linux",
+            "Target:LinuxRpm",
         ])
         signer.AddSignatureToRPMs(to_sign.get("rpm"))
 
@@ -422,12 +422,13 @@ def main(args):
   logger.handlers = [handler]
 
   if args.subparser_name == "build":
-    if grr_config.CONFIG["Client.fleetspeak_enabled"]:
-      if grr_config.CONFIG.ContextApplied("Platform:Darwin"):
-        if not grr_config.CONFIG.Get("ClientBuilder.install_dir"):
-          raise RuntimeError("ClientBuilder.install_dir must be set.")
-        if not grr_config.CONFIG.Get("ClientBuilder.fleetspeak_plist_path"):
-          raise RuntimeError("ClientBuilder.fleetspeak_plist_path must be set.")
+    if grr_config.CONFIG[
+        "Client.fleetspeak_enabled"] and grr_config.CONFIG.ContextApplied(
+            "Platform:Darwin"):
+      if not grr_config.CONFIG.Get("ClientBuilder.install_dir"):
+        raise RuntimeError("ClientBuilder.install_dir must be set.")
+      if not grr_config.CONFIG.Get("ClientBuilder.fleetspeak_plist_path"):
+        raise RuntimeError("ClientBuilder.fleetspeak_plist_path must be set.")
     TemplateBuilder().BuildTemplate(context=context, output=args.output)
   elif args.subparser_name == "repack":
     if args.debug_build:

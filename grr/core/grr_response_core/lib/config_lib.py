@@ -116,21 +116,18 @@ def SetPlatformArchContext():
   """Add the running contexts to the config system."""
 
   # Initialize the running platform context:
-  _CONFIG.AddContext("Platform:%s" % platform.system().title())
+  _CONFIG.AddContext(f"Platform:{platform.system().title()}")
 
   machine = platform.uname()[4]
   if machine in ["x86_64", "AMD64", "i686"]:
     # 32 bit binaries running on AMD64 will still have a i386 arch.
-    if platform.architecture()[0] == "32bit":
-      arch = "i386"
-    else:
-      arch = "amd64"
+    arch = "i386" if platform.architecture()[0] == "32bit" else "amd64"
   elif machine == "x86":
     arch = "i386"
   else:
     arch = machine
 
-  _CONFIG.AddContext("Arch:%s" % arch)
+  _CONFIG.AddContext(f"Arch:{arch}")
 
 
 class ConfigFilter(metaclass=MetaclassRegistry):
@@ -177,7 +174,7 @@ class Filename(ConfigFilter):
       with io.open(data, "r") as fd:
         return fd.read()  # pytype: disable=bad-return-type
     except IOError as e:
-      raise FilterError("%s: %s" % (data, e))
+      raise FilterError(f"{data}: {e}")
 
 
 class OptionalFile(ConfigFilter):
@@ -275,7 +272,7 @@ class Resource(ConfigFilter):
 
     # pylint: disable=unreachable
     raise FilterError(
-        "Unable to find resource %s while interpolating: " % filename_spec)
+        f"Unable to find resource {filename_spec} while interpolating: ")
     # pylint: enable=unreachable
 
 
@@ -613,7 +610,7 @@ class StringInterpolator(lexer.Lexer):
 
   def Error(self, message=None, weight=1):
     """Parse errors are fatal."""
-    raise ConfigFormatError("While parsing %s: %s" % (self.parameter, message))
+    raise ConfigFormatError(f"While parsing {self.parameter}: {message}")
 
   def StartExpression(self, **_):
     """Start processing a new expression."""
@@ -656,7 +653,7 @@ class StringInterpolator(lexer.Lexer):
     # This is the full parameter name: e.g. Logging.path
     parameter_name = self.stack.pop(-1)
     if "." not in parameter_name:
-      parameter_name = "%s.%s" % (self.default_section, parameter_name)
+      parameter_name = f"{self.default_section}.{parameter_name}"
 
     final_value = self.config.Get(parameter_name, context=self.context)
     if final_value is None:
@@ -693,7 +690,7 @@ class GrrConfigManager(object):
     self.secondary_config_parsers = []
     self.writeback = None
     self.writeback_data = collections.OrderedDict()
-    self.global_override = dict()
+    self.global_override = {}
     self.context_descriptions = {}
     self.constants = set()
     self.valid_contexts = set()
@@ -721,11 +718,8 @@ class GrrConfigManager(object):
 
   def __str__(self):
     # List all the files we read from.
-    message = ""
-    for filename in self.files:
-      message += " file=\"%s\" " % filename
-
-    return "<%s %s>" % (self.__class__.__name__, message)
+    message = "".join(" file=\"%s\" " % filename for filename in self.files)
+    return f"<{self.__class__.__name__} {message}>"
 
   def FlushCache(self):
     self.cache = {}
@@ -804,7 +798,7 @@ class GrrConfigManager(object):
       # writeback file so that we start in a clean state next run
       if rename_invalid_writeback and os.path.exists(filename):
         try:
-          b = filename + ".bak"
+          b = f"{filename}.bak"
           os.rename(filename, b)
           logging.warning("Broken writeback (%s) renamed to: %s", we, b)
         except Exception as e:  # pylint: disable=broad-except
@@ -841,7 +835,7 @@ class GrrConfigManager(object):
     validation_errors = {}
     for section in sections:
       for descriptor in self.type_infos:
-        if descriptor.name.startswith(section + "."):
+        if descriptor.name.startswith(f"{section}."):
           try:
             self.Get(descriptor.name)
           except (Error, ValueError) as e:
@@ -878,8 +872,7 @@ class GrrConfigManager(object):
     """
     if context_string not in self.context:
       if context_string not in self.valid_contexts:
-        raise InvalidContextError(
-            "Invalid context specified: %s" % context_string)
+        raise InvalidContextError(f"Invalid context specified: {context_string}")
 
       self.context.append(context_string)
       self.context_descriptions[context_string] = description
@@ -902,8 +895,7 @@ class GrrConfigManager(object):
     if self.writeback is None:
       logging.warning("Attempting to modify a read only config object.")
     if name in self.constants:
-      raise ConstModificationError(
-          "Attempting to modify constant value %s" % name)
+      raise ConstModificationError(f"Attempting to modify constant value {name}")
 
     self.writeback_data[name] = value
     self.FlushCache()
@@ -928,8 +920,7 @@ class GrrConfigManager(object):
       logging.warning("Attempting to modify a read only config object for %s.",
                       name)
     if name in self.constants:
-      raise ConstModificationError(
-          "Attempting to modify constant value %s" % name)
+      raise ConstModificationError(f"Attempting to modify constant value {name}")
 
     writeback_data = self.writeback_data
 
@@ -939,8 +930,7 @@ class GrrConfigManager(object):
         value = self.EscapeString(value)
 
       if not compatibility.PY2 and isinstance(value, bytes):
-        raise ValueError("Setting config option %s to bytes is not allowed" %
-                         name)
+        raise ValueError(f"Setting config option {name} to bytes is not allowed")
 
     writeback_data[name] = value
     self.FlushCache()
@@ -1010,7 +1000,7 @@ class GrrConfigManager(object):
     """
     if self.initialized:
       raise AlreadyInitializedError(
-          "Config was already initialized when defining %s" % descriptor.name)
+          f"Config was already initialized when defining {descriptor.name}")
 
     descriptor.section = descriptor.name.split(".")[0]
     if descriptor.name in self.type_infos:
@@ -1052,7 +1042,7 @@ class GrrConfigManager(object):
       # A context clause.
       if isinstance(v, dict) and k not in self.type_infos:
         if k not in self.valid_contexts:
-          raise InvalidContextError("Invalid context specified: %s" % k)
+          raise InvalidContextError(f"Invalid context specified: {k}")
         context_data = raw_data.setdefault(k, collections.OrderedDict())
         self.MergeData(v, context_data)
 
@@ -1071,8 +1061,7 @@ class GrrConfigManager(object):
         # If we are already initialized and someone tries to modify a constant
         # value (e.g. via Set()), break loudly.
         if self.initialized and k in self.constants:
-          raise ConstModificationError(
-              "Attempting to modify constant value %s" % k)
+          raise ConstModificationError(f"Attempting to modify constant value {k}")
 
         raw_data[k] = v
 
@@ -1086,10 +1075,7 @@ class GrrConfigManager(object):
 
     # Handle the filename.
     extension = os.path.splitext(path)[1]
-    if extension in [".yaml", ".yml"]:
-      return YamlParser
-
-    return ConfigFileParser
+    return YamlParser if extension in [".yaml", ".yml"] else ConfigFileParser
 
   def LoadSecondaryConfig(self,
                           filename=None,
@@ -1153,8 +1139,7 @@ class GrrConfigManager(object):
         clone_parser = clone.LoadSecondaryConfig(file_to_load)
         # If an include file is specified but it was not found, raise an error.
         if not clone_parser.parsed:
-          raise ConfigFileNotFound("Unable to load include file %s" %
-                                   file_to_load)
+          raise ConfigFileNotFound(f"Unable to load include file {file_to_load}")
 
     self.MergeData(clone.raw_data)
     self.files.extend(clone.files)
@@ -1210,7 +1195,7 @@ class GrrConfigManager(object):
       self.parser = self.LoadSecondaryConfig(
           filename, process_includes=process_includes)
       if must_exist and not self.parser.parsed:
-        raise ConfigFormatError("Unable to parse config file %s" % filename)
+        raise ConfigFormatError(f"Unable to parse config file {filename}")
 
     elif data is not None:
       self.parser = self.LoadSecondaryConfig(
@@ -1224,7 +1209,7 @@ class GrrConfigManager(object):
   def __getitem__(self, name):
     """Retrieve a configuration value after suitable interpolations."""
     if name not in self.type_infos:
-      raise UnknownOption("Config parameter %s not known." % name)
+      raise UnknownOption(f"Config parameter {name} not known.")
 
     return self.Get(name)
 
@@ -1259,15 +1244,12 @@ class GrrConfigManager(object):
       RuntimeError: if a value is retrieved before the config is initialized.
       ValueError: if a bad context is passed.
     """
-    if not self.initialized:
-      if name not in self.constants:
-        raise RuntimeError("Error while retrieving %s: "
-                           "Configuration hasn't been initialized yet." % name)
-    if context:
-      # Make sure it's not just a string and is iterable.
-      if (isinstance(context, str) or
-          not isinstance(context, collections.Iterable)):
-        raise ValueError("context should be a list, got %r" % context)
+    if not self.initialized and name not in self.constants:
+      raise RuntimeError("Error while retrieving %s: "
+                         "Configuration hasn't been initialized yet." % name)
+    if context and ((isinstance(context, str)
+                     or not isinstance(context, collections.Iterable))):
+      raise ValueError("context should be a list, got %r" % context)
 
     calc_context = context
 
@@ -1300,7 +1282,7 @@ class GrrConfigManager(object):
       if default is not utils.NotAValue:
         return default
 
-      raise ConfigFormatError("While parsing %s: %s" % (name, e))
+      raise ConfigFormatError(f"While parsing {name}: {e}")
 
     try:
       new_value = type_info_obj.Validate(return_value)
@@ -1326,7 +1308,7 @@ class GrrConfigManager(object):
 
     for element in context:
       if element not in self.valid_contexts:
-        raise InvalidContextError("Invalid context specified: %s" % element)
+        raise InvalidContextError(f"Invalid context specified: {element}")
 
       if element in raw_data:
         context_raw_data = raw_data[element]
@@ -1342,9 +1324,8 @@ class GrrConfigManager(object):
           yield context_raw_data, value, path + [element]
 
         # Recurse into the new context configuration.
-        for context_raw_data, value, new_path in self._ResolveContext(
-            context, name, context_raw_data, path=path + [element]):
-          yield context_raw_data, value, new_path
+        yield from self._ResolveContext(
+            context, name, context_raw_data, path=path + [element])
 
   def _GetValue(self, name, context, default=utils.NotAValue):
     """Search for the value based on the context."""
@@ -1354,12 +1335,11 @@ class GrrConfigManager(object):
     if default is not utils.NotAValue:
       value = default
 
-    # Take the default from the definition.
     elif name in self.defaults:
       value = self.defaults[name]
 
     else:
-      raise UnknownOption("Option %s not defined." % name)
+      raise UnknownOption(f"Option {name} not defined.")
 
     # We resolve the required key with the default raw data, and then iterate
     # over all elements in the context to see if there are overriding context
@@ -1369,12 +1349,7 @@ class GrrConfigManager(object):
       value = new_value
       container = self.raw_data
 
-    # Now check for any contexts. We enumerate all the possible resolutions and
-    # sort by their path length. The last one will be the match with the deepest
-    # path (i.e .the most specific match).
-    matches = list(self._ResolveContext(context, name, self.raw_data))
-
-    if matches:
+    if matches := list(self._ResolveContext(context, name, self.raw_data)):
       # Sort by the length of the path - longest match path will be at the end.
       matches.sort(key=lambda x: len(x[2]))
       value = matches[-1][1]
@@ -1453,11 +1428,7 @@ class GrrConfigManager(object):
     return value
 
   def GetSections(self):
-    result = set()
-    for descriptor in self.type_infos:
-      result.add(descriptor.section)
-
-    return result
+    return {descriptor.section for descriptor in self.type_infos}
 
   def MatchBuildContext(self,
                         target_os,
@@ -1743,7 +1714,7 @@ def ParseConfigCommandLine(rename_invalid_writeback=True):
   # Allow individual options to be specified as global overrides.
   for statement in flags.FLAGS.parameter:
     if "=" not in statement:
-      raise RuntimeError("statement %s on command line not valid." % statement)
+      raise RuntimeError(f"statement {statement} on command line not valid.")
 
     name, value = statement.split("=", 1)
     _CONFIG.global_override[name] = value

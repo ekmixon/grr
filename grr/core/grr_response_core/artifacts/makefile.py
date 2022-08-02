@@ -29,7 +29,7 @@ def main():
 
   for name in zip_obj.namelist():
     if fnmatch.fnmatch(name, "*/data/*.yaml"):
-      print("Extracting %s" % name)
+      print(f"Extracting {name}")
       with open(os.path.basename(name), "wb") as fd:
         fd.write(zip_obj.open(name).read())
 

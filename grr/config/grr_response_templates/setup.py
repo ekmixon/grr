@@ -50,21 +50,21 @@ class Sdist(sdist):
 
   def CheckTemplates(self, base_dir, version):
     """Verify we have at least one template that matches maj.minor version."""
-    major_minor = ".".join(version.split(".")[0:2])
-    templates = glob.glob(
-        os.path.join(base_dir, "templates/*%s*.zip" % major_minor))
-    required_templates = set(
-        [x.replace("maj.minor", major_minor) for x in self.REQUIRED_TEMPLATES])
+    major_minor = ".".join(version.split(".")[:2])
+    templates = glob.glob(os.path.join(base_dir, f"templates/*{major_minor}*.zip"))
+    required_templates = {
+        x.replace("maj.minor", major_minor)
+        for x in self.REQUIRED_TEMPLATES
+    }
 
     # Client templates have an extra version digit, e.g. 3.1.0.0
-    templates_present = set([
-        re.sub(r"_%s[^_]+_" % major_minor, "_%s_" % major_minor,
-               os.path.basename(x)) for x in templates
-    ])
+    templates_present = {
+        re.sub(f"_{major_minor}[^_]+_", f"_{major_minor}_", os.path.basename(x))
+        for x in templates
+    }
 
-    difference = required_templates - templates_present
-    if difference:
-      raise RuntimeError("Missing templates %s" % difference)
+    if difference := required_templates - templates_present:
+      raise RuntimeError(f"Missing templates {difference}")
 
   def run(self):
     base_dir = os.getcwd()
@@ -111,12 +111,11 @@ setup_args = dict(
                       "installfrompip.adoc for installation instructions."),
     license="Apache License, Version 2.0",
     url="https://github.com/google/grr",
-    # TODO: Clean up str() call after Python 2 support is
-    # dropped ('data_files' elements have to be bytes in Python 2).
     data_files=(find_data_files("templates", prefix="grr-response-templates") +
-                [str("version.ini")]),
+                ["version.ini"]),
     cmdclass={
         "sdist": Sdist,
-    })
+    },
+)
 
 setup(**setup_args)

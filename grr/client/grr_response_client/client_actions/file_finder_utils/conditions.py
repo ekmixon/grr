@@ -220,8 +220,7 @@ class LiteralMatchCondition(ContentCondition):
 
   def Search(self, fd):
     matcher = LiteralMatcher(self.params.literal.AsBytes())
-    for match in self.Scan(fd, matcher):
-      yield match
+    yield from self.Scan(fd, matcher)
 
 
 class RegexMatchCondition(ContentCondition):
@@ -235,8 +234,7 @@ class RegexMatchCondition(ContentCondition):
     regex = re.compile(self.params.regex.AsBytes(), flags=re.I | re.S | re.M)
 
     matcher = RegexMatcher(regex)
-    for match in self.Scan(fd, matcher):
-      yield match
+    yield from self.Scan(fd, matcher)
 
 
 class Matcher(metaclass=abc.ABCMeta):

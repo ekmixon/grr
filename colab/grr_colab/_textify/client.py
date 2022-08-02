@@ -39,9 +39,9 @@ def last_seen(last_ping: int) -> Text:
     measure_value = int(last_seen_secs / (60 * 60 * 24))
 
   if current_time_secs >= last_ping_secs:
-    return '{} {} ago'.format(measure_value, measure_unit)
+    return f'{measure_value} {measure_unit} ago'
   else:
-    return 'in {} {}'.format(measure_value, measure_unit)
+    return f'in {measure_value} {measure_unit}'
 
 
 def online_icon(last_ping: int) -> Text:
@@ -69,7 +69,5 @@ def online_status(last_ping: int) -> Text:
 
 
 def mac(packed_bytes: bytes) -> Text:
-  if not packed_bytes:
-    return ''
-
-  return ':'.join('{:02x}'.format(b) for b in packed_bytes)
+  return (':'.join(
+      '{:02x}'.format(b) for b in packed_bytes) if packed_bytes else '')

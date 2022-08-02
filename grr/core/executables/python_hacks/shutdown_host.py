@@ -2,6 +2,7 @@
 # Lint as: python3
 """Shut down windows hosts."""
 
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
@@ -26,7 +27,5 @@ for version in tested_versions:
   if os_version.find(version) != -1:
     stdout, stderr, exit_status, time_taken = client_utils_common.Execute(
         cmd, args, time_limit=-1, bypass_allowlist=True)
-    magic_return_str = '%s, %s, %s, %s' % (stdout.encode('base64'),
-                                           stderr.encode('base64'), exit_status,
-                                           time_taken)
+    magic_return_str = f"{stdout.encode('base64')}, {stderr.encode('base64')}, {exit_status}, {time_taken}"
     break

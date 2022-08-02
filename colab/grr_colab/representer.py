@@ -313,7 +313,7 @@ class _BufferReferenceData(object):
 
     # TODO: Remove this once support for Python 2 is dropped.
     if sys.version_info < (3, 0):
-      data_repr = 'b{}'.format(data_repr)
+      data_repr = f'b{data_repr}'
 
     return '{path}:{start}-{end}: {data}'.format(
         path=self.path, start=self.start, end=self.end, data=data_repr)

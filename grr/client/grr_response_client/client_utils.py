@@ -129,9 +129,7 @@ def StatResultFromStatEntry(
   Returns:
     An instance of `os.stat_result` with basic fields populated.
   """
-  values = []
-  for attr in _STAT_ATTRS[:10]:
-    values.append(stat_entry.Get(attr))
+  values = [stat_entry.Get(attr) for attr in _STAT_ATTRS[:10]]
   return os.stat_result(values)
 
 

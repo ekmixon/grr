@@ -65,11 +65,7 @@ def _EnumMissingModules():
 
   # The size of a handle is pointer size (i.e. 64 bit of amd64 and 32 bit on
   # i386).
-  if sys.maxsize > 2**32:
-    handle_type = ctypes.c_ulonglong
-  else:
-    handle_type = ctypes.c_ulong
-
+  handle_type = ctypes.c_ulonglong if sys.maxsize > 2**32 else ctypes.c_ulong
   module_list = (handle_type * (count.value // ctypes.sizeof(handle_type)))()
 
   ctypes.windll.psapi.EnumProcessModulesEx(process_handle,
@@ -150,8 +146,9 @@ class WindowsClientBuilder(build.ClientBuilder):
           "ClientBuilder.nanny_prebuilt_binaries", context=self.context)
 
       shutil.copy(
-          os.path.join(binaries_dir, "GRRNanny_%s.exe" % vs_arch),
-          os.path.join(build_dir, "GRRservice.exe"))
+          os.path.join(binaries_dir, f"GRRNanny_{vs_arch}.exe"),
+          os.path.join(build_dir, "GRRservice.exe"),
+      )
 
     else:
       # Lets build the nanny with the VS env script.

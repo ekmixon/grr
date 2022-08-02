@@ -38,10 +38,11 @@ class FleetspeakClientTest(test_lib.GRRBaseTest):
     # 500 bytes translates to ~19 annotations.
     while expected_annotations.ByteSize() < 500:
       grr_message = rdf_flows.GrrMessage(
-          session_id="%s/%s" % (client_id, flow_id),
+          session_id=f"{client_id}/{flow_id}",
           name="TestClientAction",
           request_id=2,
-          response_id=len(grr_messages) + 1)
+          response_id=len(grr_messages) + 1,
+      )
       annotation = expected_annotations.entries.add()
       annotation.key = fleetspeak_client._DATA_IDS_ANNOTATION_KEY
       annotation.value = "%s:2:%d" % (flow_id, len(grr_messages) + 1)
@@ -50,10 +51,11 @@ class FleetspeakClientTest(test_lib.GRRBaseTest):
 
     # Add an extra GrrMessage whose annotation will not be captured.
     extra_message = rdf_flows.GrrMessage(
-        session_id="%s/%s" % (client_id, flow_id),
+        session_id=f"{client_id}/{flow_id}",
         name="TestClientAction",
         request_id=3,
-        response_id=1)
+        response_id=1,
+    )
     grr_messages.append(extra_message)
     client._sender_queue.put(extra_message)
 

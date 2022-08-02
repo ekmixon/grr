@@ -87,7 +87,6 @@ def Walk(root: bytes) -> Iterator[rdf_timeline.TimelineEntry]:
     # TODO(hanuszczak): Implement more efficient auto-batcher instead of having
     # multi-level iterators.
     for childname in childnames:
-      for entry in Recurse(os.path.join(path, childname)):
-        yield entry
+      yield from Recurse(os.path.join(path, childname))
 
   return Recurse(root)

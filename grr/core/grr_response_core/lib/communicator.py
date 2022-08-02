@@ -120,8 +120,8 @@ class ReceivedCipher(Cipher):
     self.response_comms = response_comms
 
     if response_comms.api_version not in [3]:
-      raise DecryptionError("Unsupported api version: %s, expected 3." %
-                            response_comms.api_version)
+      raise DecryptionError(
+          f"Unsupported api version: {response_comms.api_version}, expected 3.")
 
     if not response_comms.encrypted_cipher:
       # The message is not encrypted. We do not allow unencrypted
@@ -229,7 +229,7 @@ class ReceivedCipher(Cipher):
     try:
       rdf_crypto.HMAC(self.cipher.hmac_key).Verify(msg, digest)
     except rdf_crypto.VerificationError as e:
-      raise DecryptionError("HMAC verification failed: %s" % e)
+      raise DecryptionError(f"HMAC verification failed: {e}")
 
     return True
 

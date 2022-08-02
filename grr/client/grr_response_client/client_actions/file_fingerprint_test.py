@@ -31,9 +31,7 @@ class FilehashTest(client_test_lib.EmptyActionTest):
         file_fingerprint.FingerprintFile,
         rdf_client_action.FingerprintRequest(pathspec=p))
     types = result[0].matching_types
-    fingers = {}
-    for f in result[0].results:
-      fingers[f["name"]] = f
+    fingers = {f["name"]: f for f in result[0].results}
     generic_sha256 = fingers["generic"]["sha256"]
     self.assertEqual(generic_sha256,
                      hashlib.sha256(open(path, "rb").read()).digest())
@@ -43,7 +41,7 @@ class FilehashTest(client_test_lib.EmptyActionTest):
         rdf_client_action.FingerprintTuple.Type.FPT_GENERIC: "generic",
         rdf_client_action.FingerprintTuple.Type.FPT_PE_COFF: "pecoff"
     }
-    ti_map = dict((v, k) for k, v in t_map.items())
+    ti_map = {v: k for k, v in t_map.items()}
     for t in types:
       self.assertIn(t_map[t], fingers)
     for f in fingers:

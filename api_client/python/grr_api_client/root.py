@@ -82,7 +82,7 @@ class GrrUserBase(object):
     return GrrUser(data=data, context=self._context)
 
   def __repr__(self) -> str:
-    return "<%s %s>" % (self.__class__.__name__, self.username)
+    return f"<{self.__class__.__name__} {self.username}>"
 
 
 class GrrUserRef(GrrUserBase):
@@ -186,7 +186,7 @@ class ClientRef(object):
     self._context.SendRequest("RestartFleetspeakGrrService", args)
 
   def __repr__(self) -> str:
-    return "<{} client_id={}>".format(self.__class__.__name__, self.client_id)
+    return f"<{self.__class__.__name__} client_id={self.client_id}>"
 
 
 class RootGrrApi(object):

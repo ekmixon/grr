@@ -31,17 +31,18 @@ class RepackConfig(object):
     config_keys = set(config_data.keys())
     required_keys = build.REQUIRED_BUILD_YAML_KEYS
     if config_keys != required_keys:
-      raise RuntimeError("Bad build.yaml from %s: expected %s, got %s" %
-                         (template_path, required_keys, config_keys))
+      raise RuntimeError(
+          f"Bad build.yaml from {template_path}: expected {required_keys}, got {config_keys}"
+      )
 
   def GetConfigFromTemplate(self, template_path):
     """Apply build.yaml settings from the template."""
     with zipfile.ZipFile(template_path) as template_zip:
-      build_yaml = None
-      for name in template_zip.namelist():
-        if name.endswith("build.yaml"):
-          build_yaml = name
-          break
+      build_yaml = next(
+          (name
+           for name in template_zip.namelist() if name.endswith("build.yaml")),
+          None,
+      )
       if not build_yaml:
         raise RuntimeError("Couldn't find build.yaml in %s" % template_path)
       with template_zip.open(build_yaml) as buildfile:
@@ -68,7 +69,7 @@ class TemplateRepacker(object):
     elif "Target:LinuxRpm" in context:
       deployer_class = linux_repackers.CentosClientRepacker
     else:
-      raise RuntimeError("Bad build context: %s" % context)
+      raise RuntimeError(f"Bad build context: {context}")
 
     return deployer_class(context=context, signer=signer)
 
@@ -77,10 +78,10 @@ class TemplateRepacker(object):
       print("Enter passphrase for code signing:")
       return getpass.getpass()
     else:
-      passwd = sys.stdin.readline().strip()
-      if not passwd:
+      if passwd := sys.stdin.readline().strip():
+        return passwd
+      else:
         raise RuntimeError("Expected signing password on stdin, got nothing.")
-      return passwd
 
   def GetSigner(self, context):
     if "Target:Windows" not in context and "Target:LinuxRpm" not in context:
@@ -107,7 +108,7 @@ class TemplateRepacker(object):
             "ClientBuilder.signtool_verification_cmd", context=context)
         return signing.WindowsSigntoolCodeSigner(signing_cmd, verification_cmd)
       else:
-        raise RuntimeError("Signing not supported on platform: %s" % system)
+        raise RuntimeError(f"Signing not supported on platform: {system}")
     elif "Target:LinuxRpm" in context:
       pub_keyfile = config.CONFIG.Get(
           "ClientBuilder.rpm_signing_key_public_keyfile", context=context)
@@ -167,7 +168,7 @@ class TemplateRepacker(object):
     """
     orig_config = config.CONFIG
     repack_config = RepackConfig()
-    print("Repacking template: %s" % template_path)
+    print(f"Repacking template: {template_path}")
     config.CONFIG = repack_config.GetConfigFromTemplate(template_path)
 
     result_path = None
@@ -185,9 +186,7 @@ class TemplateRepacker(object):
             (repack_context,
              config.CONFIG.Get("Client.labels", context=repack_context)))
       try:
-        signer = None
-        if sign:
-          signer = self.GetSigner(repack_context)
+        signer = self.GetSigner(repack_context) if sign else None
         builder_obj = self.GetRepacker(context=repack_context, signer=signer)
         builder_obj.signed_template = signed_template
         result_path = builder_obj.MakeDeployableBinary(template_path,
@@ -196,7 +195,7 @@ class TemplateRepacker(object):
         logging.exception("Repacking template %s failed:", template_path)
 
       if result_path:
-        print("Repacked into %s" % result_path)
+        print(f"Repacked into {result_path}")
         if upload:
           # We delay import here so we don't have to import the entire server
           # codebase and do full server init if we're just building and
@@ -222,7 +221,7 @@ class TemplateRepacker(object):
               binary_urn,
               client_context=repack_context)
       else:
-        print("Failed to repack %s." % template_path)
+        print(f"Failed to repack {template_path}.")
     finally:
       config.CONFIG = orig_config
 
@@ -241,7 +240,7 @@ class TemplateRepacker(object):
           upload=upload)
       # If it's windows also repack a debug version.
       if template_path.endswith(".exe.zip"):
-        print("Repacking as debug installer: %s." % template_path)
+        print(f"Repacking as debug installer: {template_path}.")
         self.RepackTemplate(
             template_path,
             os.path.join(config.CONFIG["ClientBuilder.executables_dir"],

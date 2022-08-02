@@ -43,13 +43,12 @@ class GetCloudVMMetadata(actions.ActionPlugin):
 
   def IsCloud(self, request, bios_version, services):
     """Test to see if we're on a cloud machine."""
-    if request.bios_version_regex and bios_version:
-      if re.match(request.bios_version_regex, bios_version):
-        return True
-    if request.service_name_regex and services:
-      if re.search(request.service_name_regex, services):
-        return True
-    return False
+    if (request.bios_version_regex and bios_version
+        and re.match(request.bios_version_regex, bios_version)):
+      return True
+    return bool(
+        request.service_name_regex and services
+        and re.search(request.service_name_regex, services))
 
   def GetMetaData(self, request):
     """Get metadata from local metadata server.

@@ -203,15 +203,12 @@ class TSKFile(vfs_base.VFSHandler):
       self.pathspec.last.inode = self.fd.info.meta.addr
 
   def GetAttribute(self, ntfs_type, ntfs_id=None):
-    for attribute in self.fd:
-      if attribute.info.type == ntfs_type:
-        # If ntfs_id is specified it has to also match.
-        if ntfs_id is not None and attribute.info.id != ntfs_id:
-          continue
-
-        return attribute
-
-    return None
+    return next(
+        (attribute
+         for attribute in self.fd if attribute.info.type == ntfs_type and (
+             ntfs_id is None or attribute.info.id == ntfs_id)),
+        None,
+    )
 
   def ListNames(self):
     directory_handle = self.fd.as_directory()
@@ -263,7 +260,7 @@ class TSKFile(vfs_base.VFSHandler):
           if value < 0:
             value &= 0xFFFFFFFF
 
-          setattr(response, "st_%s" % attribute, value)
+          setattr(response, f"st_{attribute}", value)
         except AttributeError:
           pass
 
@@ -312,7 +309,7 @@ class TSKFile(vfs_base.VFSHandler):
   def Read(self, length):
     """Read from the file."""
     if not self.IsFile():
-      raise IOError("%s is not a file." % self.pathspec.last.path)
+      raise IOError(f"{self.pathspec.last.path} is not a file.")
 
     available = min(self.size - self.offset, length)
     if available > 0:
@@ -349,7 +346,7 @@ class TSKFile(vfs_base.VFSHandler):
     del ext_attrs  # Unused.
 
     if not self.IsDirectory():
-      raise IOError("%s is not a directory" % self.pathspec.CollapsePath())
+      raise IOError(f"{self.pathspec.CollapsePath()} is not a directory")
 
     for f in self.fd.as_directory():
       try:
@@ -363,12 +360,12 @@ class TSKFile(vfs_base.VFSHandler):
 
         # Now send back additional named attributes for the ADS.
         for attribute in f:
-          if attribute.info.type in [
-              pytsk3.TSK_FS_ATTR_TYPE_NTFS_DATA, pytsk3.TSK_FS_ATTR_TYPE_DEFAULT
-          ]:
-            if attribute.info.name:
-              yield self.MakeStatResponse(
-                  f, append_name=name, tsk_attribute=attribute)
+          if (attribute.info.type in [
+              pytsk3.TSK_FS_ATTR_TYPE_NTFS_DATA,
+              pytsk3.TSK_FS_ATTR_TYPE_DEFAULT,
+          ] and attribute.info.name):
+            yield self.MakeStatResponse(
+                f, append_name=name, tsk_attribute=attribute)
       except AttributeError:
         pass
 

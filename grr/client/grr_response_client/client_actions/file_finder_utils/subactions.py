@@ -92,7 +92,7 @@ class HashAction(Action):
     elif policy == self.opts.OversizedFilePolicy.SKIP:
       return
     else:
-      raise ValueError("Unknown oversized file policy: %s" % policy)
+      raise ValueError(f"Unknown oversized file policy: {policy}")
 
 
 class DownloadAction(Action):
@@ -130,7 +130,7 @@ class DownloadAction(Action):
     elif policy == self.opts.OversizedFilePolicy.SKIP:
       return
     else:
-      raise ValueError("Unknown oversized file policy: %s" % policy)
+      raise ValueError(f"Unknown oversized file policy: {policy}")
 
   def _UploadFilePath(self, filepath):
     max_size = self.opts.max_size

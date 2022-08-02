@@ -96,7 +96,7 @@ class VfsFile(io.BufferedIOBase):
     elif whence == io.SEEK_CUR:
       new_pos = self.tell() + offset
     else:
-      msg = 'Whence point {} is not supported.'.format(whence)
+      msg = f'Whence point {whence} is not supported.'
       raise io.UnsupportedOperation(msg)
 
     buffer_start_pos = self._pos - self._buffer_pos
@@ -271,7 +271,7 @@ class VFS(object):
       raise errors.ApprovalMissingError(self._client.client_id, e)
 
     if f.is_directory:
-      raise ValueError('`{}` is a directory'.format(path))
+      raise ValueError(f'`{path}` is a directory')
 
     link = '{}/api/clients/{}/vfs-blob/{}'
     return link.format(FLAGS.grr_admin_ui_url, self._client.client_id,
@@ -283,11 +283,11 @@ class VFS(object):
 
 def get_vfs_path(path: Text, path_type: jobs_pb2.PathSpec.PathType) -> Text:
   if path_type == jobs_pb2.PathSpec.OS:
-    return 'fs/os{}'.format(path)
+    return f'fs/os{path}'
   elif path_type == jobs_pb2.PathSpec.TSK:
-    return 'fs/tsk{}'.format(path)
+    return f'fs/tsk{path}'
   elif path_type == jobs_pb2.PathSpec.NTFS:
-    return 'fs/ntfs{}'.format(path)
+    return f'fs/ntfs{path}'
   elif path_type == jobs_pb2.PathSpec.REGISTRY:
-    return 'registry{}'.format(path)
+    return f'registry{path}'
   raise errors.UnsupportedPathTypeError(path_type)

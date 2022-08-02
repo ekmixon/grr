@@ -51,13 +51,12 @@ class RequestsInstrumentor(object):
 
   def request(self, **request_options):
     self.actions.append([self.time, request_options])
-    if self.responses:
-      response = self.responses.pop(0)
-      if isinstance(response, IOError):
-        raise response
-      return response
-    else:
+    if not self.responses:
       return _make_404()
+    response = self.responses.pop(0)
+    if isinstance(response, IOError):
+      raise response
+    return response
 
   def sleep(self, timeout):
     self.time += timeout
@@ -80,9 +79,7 @@ class URLFilter(RequestsInstrumentor):
     # If request is from server2 - return a valid response. Assume, server2 is
     # reachable from all proxies.
     response = super(URLFilter, self).request(url=url, **kwargs)
-    if "server2" in url:
-      return _make_200("Good")
-    return response
+    return _make_200("Good") if "server2" in url else response
 
 
 class MockHTTPManager(comms.HTTPManager):
@@ -300,16 +297,14 @@ class SizeLimitedQueueTest(test_lib.GRRBaseTest):
       q.Put(m, block=False)
       in_queue.append(m)
 
-      self.assertEqual(q.Size(),
-                       sum([len(m.SerializeToBytes()) for m in in_queue]))
+      self.assertEqual(q.Size(), sum(len(m.SerializeToBytes()) for m in in_queue))
 
-    for _ in range(len(messages)):
+    for message in messages:
       msg_list = q.GetMessages(1)
       self.assertLen(msg_list.job, 1)
       in_queue.remove(msg_list.job[0])
 
-      self.assertEqual(q.Size(),
-                       sum([len(m.SerializeToBytes()) for m in in_queue]))
+      self.assertEqual(q.Size(), sum(len(m.SerializeToBytes()) for m in in_queue))
 
   def testSizeLimitedQueueOverflow(self):
 

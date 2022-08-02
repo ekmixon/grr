@@ -105,15 +105,10 @@ class WindowsTemplateBuilder(object):
     self.virtualenv_bin32 = os.path.join(self.python_dir_32,
                                          r"Scripts\virtualenv.exe")
 
-    if args.virtualenv_64bit:
-      self.virtualenv64 = args.virtualenv_64bit
-    else:
-      self.virtualenv64 = os.path.join(args.build_dir, "python_64")
-    if args.virtualenv_32bit:
-      self.virtualenv32 = args.virtualenv_32bit
-    else:
-      self.virtualenv32 = os.path.join(args.build_dir, "python_32")
-
+    self.virtualenv64 = args.virtualenv_64bit or os.path.join(
+        args.build_dir, "python_64")
+    self.virtualenv32 = args.virtualenv_32bit or os.path.join(
+        args.build_dir, "python_32")
     self.grr_client_build64 = os.path.join(self.virtualenv64,
                                            r"Scripts\grr_client_build.exe")
     self.grr_client_build32 = os.path.join(self.virtualenv32,
@@ -137,9 +132,9 @@ class WindowsTemplateBuilder(object):
     """Clean the build environment."""
     # os.unlink doesn't work effectively, use the shell to delete.
     if os.path.exists(args.build_dir):
-      subprocess.call("rd /s /q %s" % args.build_dir, shell=True)
+      subprocess.call(f"rd /s /q {args.build_dir}", shell=True)
     if os.path.exists(args.output_dir):
-      subprocess.call("rd /s /q %s" % args.output_dir, shell=True)
+      subprocess.call(f"rd /s /q {args.output_dir}", shell=True)
 
     os.makedirs(args.build_dir)
     os.makedirs(args.output_dir)
@@ -157,7 +152,7 @@ class WindowsTemplateBuilder(object):
 
     cmd = ["-m", "pip", "install"]
     if args.wheel_dir:
-      cmd += ["--no-index", r"--find-links=file:///%s" % args.wheel_dir]
+      cmd += ["--no-index", f"--find-links=file:///{args.wheel_dir}"]
 
     subprocess.check_call([self.virtualenv_python64] + cmd +
                           ["--upgrade", "pip>=8.1.1"])
@@ -173,8 +168,11 @@ class WindowsTemplateBuilder(object):
   def MakeProtoSdist(self):
     os.chdir(os.path.join(args.grr_src, "grr/proto"))
     subprocess.check_call([
-        self.virtualenv_python64, "setup.py", "sdist", "--formats=zip",
-        "--dist-dir=%s" % args.build_dir
+        self.virtualenv_python64,
+        "setup.py",
+        "sdist",
+        "--formats=zip",
+        f"--dist-dir={args.build_dir}",
     ])
     return glob.glob(os.path.join(args.build_dir,
                                   "grr-response-proto-*.zip")).pop()
@@ -182,8 +180,12 @@ class WindowsTemplateBuilder(object):
   def MakeCoreSdist(self):
     os.chdir(os.path.join(args.grr_src, "grr/core"))
     subprocess.check_call([
-        self.virtualenv_python64, "setup.py", "sdist", "--formats=zip",
-        "--dist-dir=%s" % args.build_dir, "--no-sync-artifacts"
+        self.virtualenv_python64,
+        "setup.py",
+        "sdist",
+        "--formats=zip",
+        f"--dist-dir={args.build_dir}",
+        "--no-sync-artifacts",
     ])
     return glob.glob(os.path.join(args.build_dir,
                                   "grr-response-core-*.zip")).pop()
@@ -191,8 +193,11 @@ class WindowsTemplateBuilder(object):
   def MakeClientSdist(self):
     os.chdir(os.path.join(args.grr_src, "grr/client/"))
     subprocess.check_call([
-        self.virtualenv_python64, "setup.py", "sdist", "--formats=zip",
-        "--dist-dir=%s" % args.build_dir
+        self.virtualenv_python64,
+        "setup.py",
+        "sdist",
+        "--formats=zip",
+        f"--dist-dir={args.build_dir}",
     ])
     return glob.glob(os.path.join(args.build_dir,
                                   "grr-response-client-*.zip")).pop()
@@ -200,8 +205,11 @@ class WindowsTemplateBuilder(object):
   def MakeClientBuilderSdist(self):
     os.chdir(os.path.join(args.grr_src, "grr/client_builder/"))
     subprocess.check_call([
-        self.virtualenv_python64, "setup.py", "sdist", "--formats=zip",
-        "--dist-dir=%s" % args.build_dir
+        self.virtualenv_python64,
+        "setup.py",
+        "sdist",
+        "--formats=zip",
+        f"--dist-dir={args.build_dir}",
     ])
     return glob.glob(
         os.path.join(args.build_dir,
@@ -214,8 +222,8 @@ class WindowsTemplateBuilder(object):
     cmd32 = [self.pip32, "install"]
 
     if args.wheel_dir:
-      cmd64 += ["--no-index", r"--find-links=file:///%s" % args.wheel_dir]
-      cmd32 += ["--no-index", r"--find-links=file:///%s" % args.wheel_dir]
+      cmd64 += ["--no-index", f"--find-links=file:///{args.wheel_dir}"]
+      cmd32 += ["--no-index", f"--find-links=file:///{args.wheel_dir}"]
 
     cmd64.append(path)
     cmd32.append(path)
@@ -280,7 +288,7 @@ class WindowsTemplateBuilder(object):
     if os.path.exists(self.install_path):
       shutil.rmtree(self.install_path)
       if os.path.exists(self.install_path):
-        raise RuntimeError("Install path still exists: %s" % self.install_path)
+        raise RuntimeError(f"Install path still exists: {self.install_path}")
 
     # Deliberately don't check return code, since service may not be installed.
     subprocess.call(["sc", "stop", self.service_name])
@@ -288,7 +296,7 @@ class WindowsTemplateBuilder(object):
   def _CheckInstallSuccess(self):
     """Checks if the installer installed correctly."""
     if not os.path.exists(self.install_path):
-      raise RuntimeError("Install failed, no files at: %s" % self.install_path)
+      raise RuntimeError(f"Install failed, no files at: {self.install_path}")
 
     try:
       output = subprocess.check_output(["sc", "query", self.service_name],
@@ -305,13 +313,11 @@ class WindowsTemplateBuilder(object):
     if self.expect_service_running:
       if not service_running:
         raise RuntimeError(
-            "GRR service not running after install, sc query output: %s" %
-            output)
-    else:
-      if service_running:
-        raise RuntimeError(
-            "GRR service running after install with expect_service_running == "
-            "False, sc query output: %s" % output)
+            f"GRR service not running after install, sc query output: {output}")
+    elif service_running:
+      raise RuntimeError(
+          "GRR service running after install with expect_service_running == "
+          "False, sc query output: %s" % output)
 
   def _InstallInstallers(self):
     """Install the installer built by RepackTemplates."""

@@ -105,11 +105,7 @@ data_files = list(
         find_data_files("install_data"),
         find_data_files("scripts"),
         find_data_files("grr_response_core/artifacts"),
-        # TODO: For some reason, this path cannot be unicode string
-        # or else installation fails for Python 2 (with "too many values to
-        # unpack" error). This call should be removed once support for Python 2
-        # is dropped.
-        [str("version.ini")],
+        ["version.ini"],
     ))
 
 setup_args = dict(
@@ -126,11 +122,9 @@ setup_args = dict(
     include_package_data=True,
     ext_modules=[
         Extension(
-            # TODO: In Python 2, extension name and sources have to
-            # be of type `bytes`. These calls should be removed once support for
-            # Python 2 is dropped.
-            name=str("grr_response_core._semantic"),
-            sources=[str("accelerated/accelerated.c")])
+            name="grr_response_core._semantic",
+            sources=["accelerated/accelerated.c"],
+        )
     ],
     cmdclass={
         "develop": Develop,
@@ -143,7 +137,7 @@ setup_args = dict(
         "cryptography==2.9.2",
         "distro==1.5.0",
         "fleetspeak==0.1.7",
-        "grr-response-proto==%s" % VERSION.get("Version", "packagedepends"),
+        f'grr-response-proto=={VERSION.get("Version", "packagedepends")}',
         "ipaddr==2.2.0",
         "ipaddress==1.0.23",
         "ipython==7.15.0",
@@ -160,8 +154,7 @@ setup_args = dict(
         "wheel==0.34.2",
         "yara-python==4.0.1",
     ],
-
-    # Data files used by GRR. Access these via the config_lib "resource" filter.
-    data_files=data_files)
+    data_files=data_files,
+)
 
 setup(**setup_args)

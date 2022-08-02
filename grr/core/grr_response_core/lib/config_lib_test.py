@@ -402,7 +402,7 @@ Platform:Windows:
     conf = config_lib.GrrConfigManager()
     config_file = os.path.join(self.temp_dir, "config.yaml")
     with io.open(config_file, "w") as fd:
-      fd.write("Section1.option1: %s" % value)
+      fd.write(f"Section1.option1: {value}")
     conf.DEFINE_string("Section1.option1", "Default Value", "Help")
     conf.Initialize(filename=config_file)
     return conf
@@ -971,7 +971,7 @@ SecondaryFileIncluded: true
 
       # Make sure we only try to open files from this directory.
       if dirname != config_path:
-        raise IOError("Tried to open wrong file %s" % filename)
+        raise IOError(f"Tried to open wrong file {filename}")
 
       if basename == "1.yaml":
         return io.StringIO(one)
@@ -979,7 +979,7 @@ SecondaryFileIncluded: true
       if basename == "2.yaml":
         return io.StringIO(two)
 
-      raise IOError("File not found %s" % filename)
+      raise IOError(f"File not found {filename}")
 
     # We need to also use the nt path manipulation modules.
     with utils.MultiStubber((io, "open", MockedWindowsOpen),
@@ -1082,7 +1082,7 @@ Test1 Context:
     config_file = os.path.join(self.temp_dir, "writeback.yaml")
     conf.SetWriteBack(config_file)
     conf.DEFINE_string("NewSection1.new_option1", u"Default Value", "Help")
-    conf.Set(str("NewSection1.new_option1"), u"New Value1")
+    conf.Set("NewSection1.new_option1", u"New Value1")
     conf.Write()
 
     data = io.open(config_file).read()
@@ -1106,7 +1106,7 @@ Client.labels: [Test1]
       f.close()
 
     self.assertRaises(AttributeError, conf.SetWriteBack, writeback_file)
-    self.assertTrue(os.path.isfile(writeback_file + ".bak"))
+    self.assertTrue(os.path.isfile(f"{writeback_file}.bak"))
 
   def testNoRenameOfReadProtectedFile(self):
     """Don't rename config files we don't have permission to read."""

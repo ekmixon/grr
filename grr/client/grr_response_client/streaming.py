@@ -57,8 +57,7 @@ class Streamer(object):
       `Chunk` instances.
     """
     with open(filepath, "rb") as filedesc:
-      for chunk in self.StreamFile(filedesc, offset=offset, amount=amount):
-        yield chunk
+      yield from self.StreamFile(filedesc, offset=offset, amount=amount)
 
   def StreamMemory(self, process, offset=0, amount=None):
     """Streams chunks of memory of a given process starting at given offset.

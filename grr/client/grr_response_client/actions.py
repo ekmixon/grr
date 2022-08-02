@@ -123,13 +123,13 @@ class ActionPlugin(object):
     try:
       if self.message.args_rdf_name:
         if not self.in_rdfvalue:
-          raise RuntimeError("Did not expect arguments, got %s." %
-                             self.message.args_rdf_name)
+          raise RuntimeError(
+              f"Did not expect arguments, got {self.message.args_rdf_name}.")
 
         if self.in_rdfvalue.__name__ != self.message.args_rdf_name:
           raise RuntimeError(
-              "Unexpected arg type %s != %s." %
-              (self.message.args_rdf_name, self.in_rdfvalue.__name__))
+              f"Unexpected arg type {self.message.args_rdf_name} != {self.in_rdfvalue.__name__}."
+          )
 
         args = self.message.payload
 
@@ -137,8 +137,7 @@ class ActionPlugin(object):
       if self._authentication_required and (
           self.message.auth_state !=
           rdf_flows.GrrMessage.AuthorizationState.AUTHENTICATED):
-        raise RuntimeError("Message for %s was not Authenticated." %
-                           self.message.name)
+        raise RuntimeError(f"Message for {self.message.name} was not Authenticated.")
 
       self.cpu_start = self.proc.cpu_times()
       self.cpu_limit = self.message.cpu_limit
@@ -174,8 +173,6 @@ class ActionPlugin(object):
       self.SetStatus(rdf_flows.GrrStatus.ReturnedStatus.CPU_LIMIT_EXCEEDED,
                      "%r: %s" % (e, e), traceback.format_exc())
 
-    # We want to report back all errors and map Python exceptions to
-    # Grr Errors.
     except Exception as e:  # pylint: disable=broad-except
       self.SetStatus(rdf_flows.GrrStatus.ReturnedStatus.GENERIC_ERROR,
                      "%r: %s" % (e, e), traceback.format_exc())
@@ -224,8 +221,7 @@ class ActionPlugin(object):
     Raises:
       KeyError: if not implemented.
     """
-    raise KeyError("Action %s not available on this platform." %
-                   self.message.name)
+    raise KeyError(f"Action {self.message.name} not available on this platform.")
 
   def SetStatus(self, status, message="", backtrace=None):
     """Set a status to report back to the server."""
@@ -297,8 +293,9 @@ class ActionPlugin(object):
       return
 
     if self.runtime_limit and now - self.start_time > self.runtime_limit:
-      raise RuntimeExceededError("{} exceeded runtime limit of {}.".format(
-          compatibility.GetName(type(self)), self.runtime_limit))
+      raise RuntimeExceededError(
+          f"{compatibility.GetName(type(self))} exceeded runtime limit of {self.runtime_limit}."
+      )
 
     ActionPlugin.last_progress_time = now
 

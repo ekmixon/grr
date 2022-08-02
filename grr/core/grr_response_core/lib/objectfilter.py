@@ -139,8 +139,7 @@ class Filter(metaclass=abc.ABCMeta):
     self.value_expander_cls = value_expander
     if self.value_expander_cls:
       if not issubclass(self.value_expander_cls, ValueExpander):
-        raise Error(
-            "%s is not a valid value expander" % (self.value_expander_cls))
+        raise Error(f"{self.value_expander_cls} is not a valid value expander")
       self.value_expander = self.value_expander_cls()
     self.args = arguments or []
 
@@ -164,10 +163,7 @@ class AndFilter(Filter):
   """
 
   def Matches(self, obj):
-    for child_filter in self.args:
-      if not child_filter.Matches(obj):
-        return False
-    return True
+    return all(child_filter.Matches(obj) for child_filter in self.args)
 
 
 class OrFilter(Filter):
@@ -177,12 +173,8 @@ class OrFilter(Filter):
   """
 
   def Matches(self, obj):
-    if not self.args:
-      return True
-    for child_filter in self.args:
-      if child_filter.Matches(obj):
-        return True
-    return False
+    return (any(child_filter.Matches(obj)
+                for child_filter in self.args) if self.args else True)
 
 
 class Operator(Filter):
@@ -247,9 +239,7 @@ class GenericBinaryOperator(BinaryOperator):
   def Matches(self, obj):
     key = self.left_operand
     values = self.value_expander.Expand(obj, key)
-    if values and self.Operate(values):
-      return True
-    return False
+    return bool(values and self.Operate(values))
 
 
 class Equals(GenericBinaryOperator):
@@ -328,14 +318,11 @@ class InSet(GenericBinaryOperator):
 
     # x might be an iterable
     # first we need to skip strings or we'll do silly things
-    if isinstance(x, str) or isinstance(x, bytes):
+    if isinstance(x, (str, bytes)):
       return False
 
     try:
-      for value in x:
-        if value not in y:
-          return False
-      return True
+      return all(value in y for value in x)
     except TypeError:
       return False
 
@@ -505,16 +492,13 @@ class ValueExpander(object):
           for k, v in sub_obj.items():
             yield {k: v}
         else:
-          for value in sub_obj:
-            yield value
+          yield from sub_obj
       else:
         # If it's an iterable, we recurse on each value.
         for sub_obj in attr_value:
-          for value in self.Expand(sub_obj, path[1:]):
-            yield value
+          yield from self.Expand(sub_obj, path[1:])
     except TypeError:  # This is then not iterable, we recurse with the value
-      for value in self.Expand(attr_value, path[1:]):
-        yield value
+      yield from self.Expand(attr_value, path[1:])
 
   def Expand(self, obj, path):
     """Returns a list of all the values for the given path in the object obj.
@@ -543,11 +527,9 @@ class ValueExpander(object):
       return
 
     if len(path) == 1:
-      for value in self._AtLeaf(attr_value):
-        yield value
+      yield from self._AtLeaf(attr_value)
     else:
-      for value in self._AtNonLeaf(attr_value, path):
-        yield value
+      yield from self._AtNonLeaf(attr_value, path)
 
 
 class AttributeValueExpander(ValueExpander):
@@ -581,7 +563,7 @@ class BasicExpression(lexer.Expression):
     op_str = self.operator.lower()
     operator = filter_implementation.OPS.get(op_str, None)
     if not operator:
-      raise ParseError("Unknown operator %s provided." % self.operator)
+      raise ParseError(f"Unknown operator {self.operator} provided.")
     arguments.extend(self.args)
     expander = filter_implementation.FILTERS["ValueExpander"]
     return operator(arguments=arguments, value_expander=expander)
@@ -598,18 +580,17 @@ class ContextExpression(lexer.Expression):
     super().__init__()
 
   def __str__(self) -> Text:
-    return "Context(%s %s)" % (self.attribute, [str(x) for x in self.args])
+    return f"Context({self.attribute} {[str(x) for x in self.args]})"
 
   def SetExpression(self, expression):
     if isinstance(expression, lexer.Expression):
       self.args = [expression]
     else:
-      raise ParseError("Expected expression, got %s" % expression)
+      raise ParseError(f"Expected expression, got {expression}")
 
   def Compile(self, filter_implementation):
     arguments = [self.attribute]
-    for arg in self.args:
-      arguments.append(arg.Compile(filter_implementation))
+    arguments.extend(arg.Compile(filter_implementation) for arg in self.args)
     expander = filter_implementation.FILTERS["ValueExpander"]
     context_cls = filter_implementation.FILTERS["Context"]
     return context_cls(arguments=arguments, value_expander=expander)
@@ -620,12 +601,12 @@ class BinaryExpression(lexer.BinaryExpression):
   def Compile(self, filter_implemention):
     """Compile the binary expression into a filter object."""
     operator = self.operator.lower()
-    if operator == "and" or operator == "&&":
+    if operator in ["and", "&&"]:
       method = "AndFilter"
-    elif operator == "or" or operator == "||":
+    elif operator in ["or", "||"]:
       method = "OrFilter"
     else:
-      raise ParseError("Invalid binary operator %s" % operator)
+      raise ParseError(f"Invalid binary operator {operator}")
 
     args = [x.Compile(filter_implemention) for x in self.args]
     return filter_implemention.FILTERS[method](arguments=args)
@@ -724,7 +705,7 @@ class Parser(lexer.SearchParser):
       float_value = float(string)
       return self.InsertArg(float_value)
     except (TypeError, ValueError):
-      raise ParseError("%s is not a valid float." % string)
+      raise ParseError(f"{string} is not a valid float.")
 
   def InsertIntArg(self, string="", **_):
     """Inserts an Integer argument."""
@@ -732,7 +713,7 @@ class Parser(lexer.SearchParser):
       int_value = int(string)
       return self.InsertArg(int_value)
     except (TypeError, ValueError):
-      raise ParseError("%s is not a valid integer." % string)
+      raise ParseError(f"{string} is not a valid integer.")
 
   def InsertInt16Arg(self, string="", **_):
     """Inserts an Integer in base16 argument."""
@@ -740,7 +721,7 @@ class Parser(lexer.SearchParser):
       int_value = int(string, 16)
       return self.InsertArg(int_value)
     except (TypeError, ValueError):
-      raise ParseError("%s is not a valid base16 integer." % string)
+      raise ParseError(f"{string} is not a valid base16 integer.")
 
   def ListStart(self, **_):
     self.list_args = []
@@ -752,7 +733,7 @@ class Parser(lexer.SearchParser):
     if self.state == "ATTRIBUTE":
       return self.StoreAttribute(string=self.string)
 
-    elif self.state == "ARG" or "LIST_ARG":
+    else:
       return self.InsertArg(string=self.string)
 
   def StringEscape(self, string, match, **_):
@@ -773,25 +754,20 @@ class Parser(lexer.SearchParser):
     # Allow unfiltered strings for regexp operations so that escaped special
     # characters (e.g. \*) or special sequences (e.g. \w) can be used in
     # objectfilter.
-    if self.current_expression.operator == "regexp":
-      self.string += compatibility.UnescapeString(string)
-    elif match.group(1) in "\\'\"rnbt":
+    if (self.current_expression.operator == "regexp"
+        or self.current_expression.operator != "regexp"
+        and match.group(1) in "\\'\"rnbt"):
       self.string += compatibility.UnescapeString(string)
     else:
-      raise ParseError("Invalid escape character %s." % string)
+      raise ParseError(f"Invalid escape character {string}.")
 
   def HexEscape(self, string, match, **_):
     """Converts a hex escaped string."""
     hex_string = match.group(1)
     try:
       self.string += binascii.unhexlify(hex_string).decode("utf-8")
-    # TODO: In Python 2 `binascii` throws `TypeError` for invalid
-    # input values (for whathever reason). This behaviour is fixed in Python 3
-    # where `binascii.Error` (a subclass of `ValueError`) is raised. Once we do
-    # not have to support Python 2 anymore, this `TypeError` catch should be
-    # removed.
     except (binascii.Error, TypeError) as error:
-      raise ParseError("Invalid hex escape '{}': {}".format(hex_string, error))
+      raise ParseError(f"Invalid hex escape '{hex_string}': {error}")
 
   def ContextOperator(self, string="", **_):
     self.stack.append(self.context_cls(string[1:]))
@@ -799,7 +775,7 @@ class Parser(lexer.SearchParser):
   def Reduce(self):
     """Reduce the token stack into an AST."""
     # Check for sanity
-    if self.state != "INITIAL" and self.state != "BINARY":
+    if self.state not in ["INITIAL", "BINARY"]:
       self.Error("Premature end of expression")
 
     length = len(self.stack)
@@ -821,9 +797,9 @@ class Parser(lexer.SearchParser):
     return self.stack[0]
 
   def Error(self, message=None, _=None):
-    raise ParseError("%s in position %s: %s <----> %s )" %
-                     (message, len(self.processed_buffer),
-                      self.processed_buffer, self.buffer))
+    raise ParseError(
+        f"{message} in position {len(self.processed_buffer)}: {self.processed_buffer} <----> {self.buffer} )"
+    )
 
   def _CombineBinaryExpressions(self, operator):
     for i in range(1, len(self.stack) - 1):
@@ -874,6 +850,8 @@ class BaseFilterImplementation(object):
   }
 
 
+
+
 class LowercaseAttributeFilterImplementation(BaseFilterImplementation):
   """Does field name access on the lowercase version of names.
 
@@ -882,13 +860,16 @@ class LowercaseAttributeFilterImplementation(BaseFilterImplementation):
   """
 
   FILTERS = {}
-  FILTERS.update(BaseFilterImplementation.FILTERS)
-  FILTERS.update({"ValueExpander": LowercaseAttributeValueExpander})
+  FILTERS |= BaseFilterImplementation.FILTERS
+  FILTERS["ValueExpander"] = LowercaseAttributeValueExpander
+
+
+
 
 
 class DictFilterImplementation(BaseFilterImplementation):
   """Does value fetching by dictionary access on the object."""
 
   FILTERS = {}
-  FILTERS.update(BaseFilterImplementation.FILTERS)
-  FILTERS.update({"ValueExpander": DictValueExpander})
+  FILTERS |= BaseFilterImplementation.FILTERS
+  FILTERS["ValueExpander"] = DictValueExpander

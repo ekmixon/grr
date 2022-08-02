@@ -177,8 +177,7 @@ print("Done.")
 
     if platform.system() != "Windows":  # Windows time resolution is too coarse.
       self.assertGreater(result.time_used, 0)
-    self.assertEqual("foobar{}".format(os.linesep).encode("utf-8"),
-                     result.stdout)
+    self.assertEqual(f"foobar{os.linesep}".encode("utf-8"), result.stdout)
 
   def testReturnVals(self):
     """Test return values."""

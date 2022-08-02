@@ -92,7 +92,7 @@ class DeleteGRRTempFiles(client_test_lib.EmptyActionTest):
 
   def setUp(self):
     super(DeleteGRRTempFiles, self).setUp()
-    filename = "%s_blah" % config.CONFIG["Client.tempfile_prefix"]
+    filename = f'{config.CONFIG["Client.tempfile_prefix"]}_blah'
     self.tempfile = utils.JoinPath(self.temp_dir, "delete_test", filename)
     self.dirname = os.path.dirname(self.tempfile)
     os.makedirs(self.dirname)

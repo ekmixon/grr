@@ -46,7 +46,7 @@ class QueryError(Error):
   """A class of exceptions indicating invalid queries (e.g. syntax errors)."""
 
   def __init__(self, output: Text, cause: Exception = None):
-    message = "invalid query: {}".format(output)
+    message = f"invalid query: {output}"
     super().__init__(message, cause=cause)
 
 

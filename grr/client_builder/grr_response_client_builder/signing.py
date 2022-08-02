@@ -66,9 +66,9 @@ class WindowsSigntoolCodeSigner(CodeSigner):
     """Signs multiple files at once."""
 
     file_list = " ".join(filenames)
-    subprocess.check_call("%s %s" % (self._signing_cmdline, file_list))
+    subprocess.check_call(f"{self._signing_cmdline} {file_list}")
     if self._verification_cmdline:
-      subprocess.check_call("%s %s" % (self._verification_cmdline, file_list))
+      subprocess.check_call(f"{self._verification_cmdline} {file_list}")
 
 
 class WindowsOsslsigncodeCodeSigner(CodeSigner):
@@ -115,7 +115,7 @@ class WindowsOsslsigncodeCodeSigner(CodeSigner):
       Error: for signing failures.
     """
     if out_filename is None:
-      out_filename = "%s.signed" % in_filename
+      out_filename = f"{in_filename}.signed"
 
     args = [
         "-certs", self.cert, "-key", self.key, "-n", self.application, "-t",
@@ -137,13 +137,13 @@ class WindowsOsslsigncodeCodeSigner(CodeSigner):
       raise
 
     if not os.path.exists(out_filename):
-      raise Error("Expected output %s not created" % out_filename)
+      raise Error(f"Expected output {out_filename} not created")
 
     try:
       subprocess.check_call(["osslsigncode", "verify", "-in", out_filename])
     except subprocess.CalledProcessError:
       logging.exception("Bad signature verification on %s", out_filename)
-      raise Error("Bad signature verification on %s" % out_filename)
+      raise Error(f"Bad signature verification on {out_filename}")
 
     return out_filename
 
@@ -194,7 +194,7 @@ class RPMCodeSigner(CodeSigner):
         # Expected output is: filename.rpm: rsa sha1 (md5) pgp md5 OK
         output = subprocess.check_output(["rpm", "--checksig", rpm_filename])
         if "pgp" not in output:
-          raise Error("PGP missing checksig %s" % rpm_filename)
+          raise Error(f"PGP missing checksig {rpm_filename}")
       except subprocess.CalledProcessError:
         logging.exception("Bad signature verification on %s", rpm_filename)
-        raise Error("Bad signature verification on %s" % rpm_filename)
+        raise Error(f"Bad signature verification on {rpm_filename}")

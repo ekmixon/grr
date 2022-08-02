@@ -60,7 +60,7 @@ class MockVFSHandlerFind(vfs.VFSHandler):
       if isinstance(self.content, bytes):
         self.size = len(self.content)
     except KeyError:
-      raise IOError("not mocking %s" % self.path)
+      raise IOError(f"not mocking {self.path}")
 
   def Read(self, length):
     # Reading the mocked directory raises.
@@ -76,10 +76,7 @@ class MockVFSHandlerFind(vfs.VFSHandler):
 
   def DoStat(self, path):
     result = rdf_client_fs.StatEntry()
-    if path.startswith("/mock2/directory3"):
-      result.st_dev = 1
-    else:
-      result.st_dev = 2
+    result.st_dev = 1 if path.startswith("/mock2/directory3") else 2
     f = self.filesystem[path]
     if isinstance(f, bytes):
       if path.startswith("/mock2/directory1/directory2"):

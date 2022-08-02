@@ -193,8 +193,7 @@ class HttpConnector(abstract.Connector):
     }
     cookies = {"csrftoken": self.csrf_token}
 
-    url = "%s/%s" % (self.api_endpoint.strip("/"),
-                     "api/v2/reflection/api-methods")
+    url = f'{self.api_endpoint.strip("/")}/api/v2/reflection/api-methods'
 
     with requests.Session() as session:
       session.trust_env = self.trust_env
@@ -463,8 +462,7 @@ class HttpConnector(abstract.Connector):
     def GenerateChunks() -> Iterator[bytes]:
       with contextlib.closing(session):
         with contextlib.closing(response):
-          for chunk in response.iter_content(self.DEFAULT_BINARY_CHUNK_SIZE):
-            yield chunk
+          yield from response.iter_content(self.DEFAULT_BINARY_CHUNK_SIZE)
 
     return utils.BinaryChunkIterator(chunks=GenerateChunks())
 

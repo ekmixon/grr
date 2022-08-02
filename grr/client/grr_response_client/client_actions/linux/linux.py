@@ -132,7 +132,19 @@ def EnumerateInterfacesFromClient(args):
     try:
       iffamily = ord(m.contents.ifa_addr[0])
 
-      if iffamily == 0x2:  # AF_INET
+      if iffamily == 0xA:
+        data = ctypes.cast(m.contents.ifa_addr, ctypes.POINTER(Sockaddrin6))
+        ip6 = bytes(list(data.contents.sin6_addr))
+        address_type = rdf_client_network.NetworkAddress.Family.INET6
+        address = rdf_client_network.NetworkAddress(
+            address_type=address_type, packed_bytes=ip6)
+        addresses.setdefault(ifname, []).append(address)
+      elif iffamily == 0x11:
+        data = ctypes.cast(m.contents.ifa_addr, ctypes.POINTER(Sockaddrll))
+        addlen = data.contents.sll_halen
+        macs[ifname] = bytes(list(data.contents.sll_addr[:addlen]))
+
+      elif iffamily == 0x2:
         data = ctypes.cast(m.contents.ifa_addr, ctypes.POINTER(Sockaddrin))
         ip4 = bytes(list(data.contents.sin_addr))
         address_type = rdf_client_network.NetworkAddress.Family.INET
@@ -140,18 +152,6 @@ def EnumerateInterfacesFromClient(args):
             address_type=address_type, packed_bytes=ip4)
         addresses.setdefault(ifname, []).append(address)
 
-      if iffamily == 0x11:  # AF_PACKET
-        data = ctypes.cast(m.contents.ifa_addr, ctypes.POINTER(Sockaddrll))
-        addlen = data.contents.sll_halen
-        macs[ifname] = bytes(list(data.contents.sll_addr[:addlen]))
-
-      if iffamily == 0xA:  # AF_INET6
-        data = ctypes.cast(m.contents.ifa_addr, ctypes.POINTER(Sockaddrin6))
-        ip6 = bytes(list(data.contents.sin6_addr))
-        address_type = rdf_client_network.NetworkAddress.Family.INET6
-        address = rdf_client_network.NetworkAddress(
-            address_type=address_type, packed_bytes=ip6)
-        addresses.setdefault(ifname, []).append(address)
     except ValueError:
       # Some interfaces don't have a iffamily and will raise a null pointer
       # exception. We still want to send back the name.
@@ -219,15 +219,11 @@ def EnumerateUsersFromClient(args):
 
     # Lose the null termination
     username, _ = user.split(b"\x00", 1)
-    username = username.decode("utf-8")
-
-    if username:
+    if username := username.decode("utf-8"):
       # Somehow the last login time can be < 0. There is no documentation
       # what this means so we just set it to 0 (the rdfvalue field is
       # unsigned so we can't send negative values).
-      if last_login < 0:
-        last_login = 0
-
+      last_login = max(last_login, 0)
       result = rdf_client.User(
           username=username, last_logon=last_login * 1000000)
 
@@ -283,9 +279,8 @@ def CheckMounts(filename):
         device, mnt_point, fs_type, _ = line.split(" ", 3)
       except ValueError:
         continue
-      if fs_type in ACCEPTABLE_FILESYSTEMS:
-        if os.path.exists(device):
-          yield device, fs_type, mnt_point
+      if fs_type in ACCEPTABLE_FILESYSTEMS and os.path.exists(device):
+        yield device, fs_type, mnt_point
 
 
 def EnumerateFilesystemsFromClient(args):
@@ -346,7 +341,7 @@ class UpdateAgent(standard.ExecuteBinaryCommand):
     elif path.endswith(".rpm"):
       self._InstallRpm(path)
     else:
-      raise ValueError("Unknown suffix for file %s." % path)
+      raise ValueError(f"Unknown suffix for file {path}.")
 
   def _InstallDeb(self, path, args):
     pid = os.fork()

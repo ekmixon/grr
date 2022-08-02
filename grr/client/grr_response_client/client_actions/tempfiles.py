@@ -63,15 +63,12 @@ def EnsureTempDirIsSane(directory):
   """Checks that the directory exists and has the correct permissions set."""
 
   if not os.path.isabs(directory):
-    raise ErrorBadPath("Directory %s is not absolute" % directory)
+    raise ErrorBadPath(f"Directory {directory} is not absolute")
 
-  if os.path.isdir(directory):
-    # The temp dir already exists, we probably created it already but
-    # let's check to make sure.
-    if not client_utils.VerifyFileOwner(directory):
-      # Just delete it, it's only temp dirs and we don't own it. If
-      # this goes wrong we just raise.
-      shutil.rmtree(directory)
+  if os.path.isdir(directory) and not client_utils.VerifyFileOwner(directory):
+    # Just delete it, it's only temp dirs and we don't own it. If
+    # this goes wrong we just raise.
+    shutil.rmtree(directory)
 
   if not os.path.isdir(directory):
     os.makedirs(directory)
@@ -162,7 +159,7 @@ def CreateGRRTempFile(filename=None, lifetime=0, mode="w+b", suffix=""):
       raise ValueError("Filename must be relative")
 
     if suffix:
-      filename = "%s.%s" % (filename, suffix)
+      filename = f"{filename}.{suffix}"
 
     outfile = open(os.path.join(directory, filename), mode)
 
@@ -255,12 +252,11 @@ def DeleteGRRTempFile(path):
            "or lie within any of %s.")
     raise ErrorNotTempFile(msg % (path, prefix, ";".join(directories)))
 
-  if os.path.exists(path):
-    # Clear our file handle cache so the file can be deleted.
-    files.FILE_HANDLE_CACHE.Flush()
-    os.remove(path)
-  else:
-    raise ErrorNotAFile("%s does not exist." % path)
+  if not os.path.exists(path):
+    raise ErrorNotAFile(f"{path} does not exist.")
+  # Clear our file handle cache so the file can be deleted.
+  files.FILE_HANDLE_CACHE.Flush()
+  os.remove(path)
 
 
 class DeleteGRRTempFiles(actions.ActionPlugin):
@@ -323,15 +319,12 @@ class DeleteGRRTempFiles(actions.ActionPlugin):
 
       elif path not in allowed_temp_dirs:
         if not os.path.exists(path):
-          raise ErrorBadPath("File %s does not exist" % path)
+          raise ErrorBadPath(f"File {path} does not exist")
         else:
-          raise ErrorBadPath("Not a regular file or directory: %s" % path)
+          raise ErrorBadPath(f"Not a regular file or directory: {path}")
 
     reply = ""
-    if deleted:
-      reply = "Deleted: %s." % deleted
-    else:
-      reply = "Nothing deleted."
+    reply = f"Deleted: {deleted}." if deleted else "Nothing deleted."
     if errors:
       reply += "\n%s" % errors
 
@@ -344,10 +337,7 @@ class CheckFreeGRRTempSpace(actions.ActionPlugin):
   out_rdfvalues = [rdf_client_fs.DiskUsage]
 
   def Run(self, args):
-    if args.path:
-      path = args.CollapsePath()
-    else:
-      path = GetDefaultGRRTempDirectory()
+    path = args.CollapsePath() if args.path else GetDefaultGRRTempDirectory()
     total, used, free, _ = psutil.disk_usage(path)
     self.SendReply(
         rdf_client_fs.DiskUsage(path=path, total=total, used=used, free=free))

@@ -30,7 +30,7 @@ class WindowsOsslsigncodeCodeSignerTest(test_lib.GRRBaseTest):
     intemp = tempfile.NamedTemporaryFile()
 
     # Simulate osslsign writing the signed file
-    outname = "%s.signed" % intemp.name
+    outname = f"{intemp.name}.signed"
     with io.open(outname, "wb") as filedesc:
       filedesc.write(b"content")
 

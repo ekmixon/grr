@@ -195,14 +195,13 @@ class UpdateConfiguration(actions.ActionPlugin):
 
     smart_arg = {str(field): value for field, value in arg.items()}
 
-    disallowed_fields = [
+    if disallowed_fields := [
         field for field in smart_arg
         if field not in UpdateConfiguration.UPDATABLE_FIELDS
-    ]
-
-    if disallowed_fields:
-      raise ValueError("Received an update request for restricted field(s) %s."
-                       % ",".join(disallowed_fields))
+    ]:
+      raise ValueError(
+          f'Received an update request for restricted field(s) {",".join(disallowed_fields)}.'
+      )
 
     if platform.system() != "Windows":
       # Check config validity before really applying the changes. This isn't

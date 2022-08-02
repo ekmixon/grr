@@ -125,10 +125,9 @@ class GRRFleetspeakClient(object):
     logging.info(START_STRING)
 
     while True:
-      dead_threads = [
+      if dead_threads := [
           tn for (tn, t) in self._threads.items() if not t.isAlive()
-      ]
-      if dead_threads:
+      ]:
         raise FatalError(
             "These threads are dead: %r. Shutting down..." % dead_threads)
       time.sleep(10)

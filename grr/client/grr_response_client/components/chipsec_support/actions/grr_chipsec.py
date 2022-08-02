@@ -103,8 +103,7 @@ class DumpFlashImage(actions.ActionPlugin):
       if args.log_level:
         self.LogError(err)
       tempfiles.DeleteGRRTempFile(dest_pathspec.path)
-      self.SendReply(
-          rdf_chipsec_types.DumpFlashImageResponse(logs=["%s" % err],))
+      self.SendReply(rdf_chipsec_types.DumpFlashImageResponse(logs=[f"{err}"]))
       return
     except Exception as err:  # pylint: disable=broad-except
       # In case an exception is raised, if the verbose mode
@@ -143,7 +142,7 @@ class DumpACPITable(actions.ActionPlugin):
     self.chipsec_log = io.StringIO()
 
     if args.logging:
-      self.logs.append("Dumping %s" % args.table_signature)
+      self.logs.append(f"Dumping {args.table_signature}")
 
       logger.logger().logfile = self.chipsec_log
       logger.logger().LOG_TO_FILE = True
@@ -173,8 +172,7 @@ class DumpACPITable(actions.ActionPlugin):
       # error message.
       if args.logging:
         self.LogError(err)
-      self.SendReply(
-          rdf_chipsec_types.DumpACPITableResponse(logs=["%s" % err],))
+      self.SendReply(rdf_chipsec_types.DumpACPITableResponse(logs=[f"{err}"]))
       return
     except Exception as err:  # pylint: disable=broad-except
       # In case an exception is raised, if the verbose mode
@@ -184,12 +182,11 @@ class DumpACPITable(actions.ActionPlugin):
       raise
 
     if not acpi_tables:
-      self.logs.append(
-          "No ACPI table with signature %s." % args.table_signature)
+      self.logs.append(f"No ACPI table with signature {args.table_signature}.")
     else:
       self.logs.append(
-          "ACPI table with signature %s has been successfully dumped." %
-          args.table_signature)
+          f"ACPI table with signature {args.table_signature} has been successfully dumped."
+      )
 
     if args.logging:
       self.logs.extend(self.chipsec_log.getvalue().splitlines())

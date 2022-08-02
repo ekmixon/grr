@@ -28,7 +28,7 @@ class RegistryKeySpec(
   __slots__ = ()
 
   def __str__(self):
-    return "{}\\{}".format(self.hive, self.path)
+    return f"{self.hive}\\{self.path}"
 
 
 def ParseRegistryURI(uri):
@@ -100,10 +100,7 @@ class RegistryConfigParser(config_lib.GRRConfigParser):
         # lists (Client.tempdir_roots) also get stringified and can't
         # really be deserialized, since RegistryConfigParser doesn't
         # support deserializing anything but strings.
-        if isinstance(value, bytes):
-          str_value = value.decode("ascii")
-        else:
-          str_value = str(value)
+        str_value = value.decode("ascii") if isinstance(value, bytes) else str(value)
         winreg.SetValueEx(self._AccessRootKey(), key, 0, winreg.REG_SZ,
                           str_value)
 

@@ -50,9 +50,8 @@ def FileFinderOSFromClient(args):
         if not result:
           raise _SkipFileException()
       stat = stat_cache.Get(path, follow_symlink=opts.resolve_links)
-      stat_entry = client_utils.StatEntryFromStatPathSpec(
+      yield client_utils.StatEntryFromStatPathSpec(
           stat, ext_attrs=opts.collect_ext_attrs)
-      yield stat_entry
     except _SkipFileException:
       pass
 
@@ -66,8 +65,7 @@ class FileFinderOS(actions.ActionPlugin):
   def Run(self, args: rdf_file_finder.FileFinderArgs):
     if args.pathtype != rdf_paths.PathSpec.PathType.OS:
       raise ValueError(
-          "FileFinderOS can only be used with OS paths, got {}".format(
-              args.pathspec))
+          f"FileFinderOS can only be used with OS paths, got {args.pathspec}")
 
     self.stat_cache = filesystem.StatCache()
 
@@ -97,7 +95,7 @@ class FileFinderOS(actions.ActionPlugin):
       return subactions.HashAction(self, args.action.hash)
     if action_type == rdf_file_finder.FileFinderAction.Action.DOWNLOAD:
       return subactions.DownloadAction(self, args.action.download)
-    raise ValueError("Incorrect action type: %s" % action_type)
+    raise ValueError(f"Incorrect action type: {action_type}")
 
   def _GetStat(self, filepath, follow_symlink=True):
     try:
@@ -164,5 +162,4 @@ def GetExpandedPaths(
       follow_links=args.follow_links, xdev=args.xdev, pathtype=pathtype)
 
   for path in args.paths:
-    for expanded_path in globbing.ExpandPath(str(path), opts, heartbeat_cb):
-      yield expanded_path
+    yield from globbing.ExpandPath(str(path), opts, heartbeat_cb)

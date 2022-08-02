@@ -572,16 +572,11 @@ def grr_wget_impl(path: Text,
   path = _build_absolute_path(path)
   filesystem = _get_filesystem(path_type)
 
-  if cached:
-    return filesystem.cached.wget(path)
-  return filesystem.wget(path)
+  return filesystem.cached.wget(path) if cached else filesystem.wget(path)
 
 
 def _build_absolute_path(path: Text) -> Text:
-  if path.startswith('/'):
-    abs_path = path
-  else:
-    abs_path = os.path.join(_state.cur_dir, path)
+  abs_path = path if path.startswith('/') else os.path.join(_state.cur_dir, path)
   return os.path.normpath(abs_path)
 
 
@@ -602,7 +597,7 @@ def _get_filesystem(path_type: Text) -> fs.FileSystem:
     return _state.client.ntfs
   elif path_type == REGISTRY:
     return _state.client.registry
-  raise ValueError('Unsupported path type `{}`'.format(path_type))
+  raise ValueError(f'Unsupported path type `{path_type}`')
 
 
 def _add_online_status_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -680,9 +675,7 @@ def _add_pretty_mac_column(df: pd.DataFrame, col_name: Text) -> pd.DataFrame:
     return df
 
   def convert_to_pretty_str(packed: bytes) -> Text:
-    if pd.isna(packed):
-      return np.nan
-    return client_textify.mac(packed)
+    return np.nan if pd.isna(packed) else client_textify.mac(packed)
 
   pretty_values = [convert_to_pretty_str(packed) for packed in df[col_name]]
   return convert.add_pretty_column(df, col_name, pretty_values)

@@ -172,8 +172,7 @@ def _BuildPayload(src_payload_path: str, dst_payload_path: str,
 def _XmlChild(node: xml.dom.minidom.Element,
               name: str) -> xml.dom.minidom.Element:
   children = node.getElementsByTagName(name)
-  child = children[0]
-  return child
+  return children[0]
 
 
 def _XmlChildValue(node: xml.dom.minidom.Element, name: str) -> str:
@@ -196,10 +195,10 @@ def _HashFile(path: str) -> bytes:
   hasher = hashlib.sha1()
   with open(path, "rb") as f:
     while True:
-      block = f.read(HASH_FILE_BLOCK_SIZE)
-      if not block:
+      if block := f.read(HASH_FILE_BLOCK_SIZE):
+        hasher.update(block)
+      else:
         break
-      hasher.update(block)
   return hasher.digest()
 
 

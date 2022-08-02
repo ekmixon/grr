@@ -81,7 +81,7 @@ class FingerprinterTest(absltest.TestCase):
         result = fp.HashIt()
 
         self.assertCountEqual(result, expected,
-                              'Hashing results for %s do not match.' % fname)
+                              f'Hashing results for {fname} do not match.')
 
   # pyformat: disable
   SAMPLE_DATA_1 = [{

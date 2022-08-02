@@ -61,10 +61,7 @@ class KeyHandle(object):
   """A wrapper class for a registry key handle."""
 
   def __init__(self, value=0):
-    if value:
-      self.handle = ctypes.c_void_p(value)
-    else:
-      self.handle = ctypes.c_void_p()
+    self.handle = ctypes.c_void_p(value) if value else ctypes.c_void_p()
 
   def __enter__(self):
     return self
@@ -258,14 +255,12 @@ def _Reg2Py(data, size, data_type):
     # DWORD is an unsigned 32-bit integer, see:
     # https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/262627d8-3418-4627-9218-4ffe110850b2
     return ctypes.cast(data, ctypes.POINTER(ctypes.c_uint32)).contents.value
-  elif data_type == winreg.REG_SZ or data_type == winreg.REG_EXPAND_SZ:
+  elif data_type in [winreg.REG_SZ, winreg.REG_EXPAND_SZ]:
     return ctypes.wstring_at(data, size // 2).rstrip(u"\x00")
   elif data_type == winreg.REG_MULTI_SZ:
     return ctypes.wstring_at(data, size // 2).rstrip(u"\x00").split(u"\x00")
   else:
-    if size == 0:
-      return None
-    return ctypes.string_at(data, size)
+    return None if size == 0 else ctypes.string_at(data, size)
 
 
 class RegistryFile(vfs_base.VFSHandler):
@@ -326,7 +321,7 @@ class RegistryFile(vfs_base.VFSHandler):
       self.hive_name = path_components[0]
       self.hive = KeyHandle(getattr(winreg, self.hive_name))
     except AttributeError:
-      raise IOError("Unknown hive name %s" % self.hive_name)
+      raise IOError(f"Unknown hive name {self.hive_name}")
     except IndexError:
       # A hive is not specified, we just list all the hives.
       return
@@ -361,7 +356,7 @@ class RegistryFile(vfs_base.VFSHandler):
             self.value_type = winreg.REG_NONE
 
       except OSError:
-        raise IOError("Unable to open key %s" % self.key_name)
+        raise IOError(f"Unable to open key {self.key_name}")
 
   def Stat(
       self,
@@ -389,10 +384,7 @@ class RegistryFile(vfs_base.VFSHandler):
                                                  name)
     response.pathspec = response_pathspec
 
-    if self.IsDirectory():
-      response.st_mode = stat.S_IFDIR
-    else:
-      response.st_mode = stat.S_IFREG
+    response.st_mode = stat.S_IFDIR if self.IsDirectory() else stat.S_IFREG
     if mtime:
       response.st_mtime = mtime
 
@@ -456,7 +448,7 @@ class RegistryFile(vfs_base.VFSHandler):
             pass
 
     except OSError as e:
-      raise IOError("Unable to list key %s: %s" % (self.key_name, e))
+      raise IOError(f"Unable to list key {self.key_name}: {e}")
 
   def ListFiles(self, ext_attrs=None):
     """A generator of all keys and values."""
@@ -524,7 +516,7 @@ class RegistryFile(vfs_base.VFSHandler):
           except OSError:
             pass
     except OSError as e:
-      raise IOError("Unable to list key %s: %s" % (self.key_name, e))
+      raise IOError(f"Unable to list key {self.key_name}: {e}")
 
   def IsDirectory(self):
     return self.is_directory

@@ -160,12 +160,12 @@ class HTTPManager(object):
     if not result:
       # Backwards compatibility - deduce server_urls from Client.control_urls.
       for control_url in config.CONFIG["Client.control_urls"]:
-        result.append(posixpath.dirname(control_url) + "/")
+        result.append(f"{posixpath.dirname(control_url)}/")
 
     # Check the URLs for trailing /. This traps configuration errors.
     for url in result:
       if not url.endswith("/"):
-        raise RuntimeError("Bad URL: %s URLs must end with /" % url)
+        raise RuntimeError(f"Bad URL: {url} URLs must end with /")
 
     return result
 
@@ -184,7 +184,7 @@ class HTTPManager(object):
 
   def _ConcatenateURL(self, base, url):
     if not url.startswith("/"):
-      url = "/" + url
+      url = f"/{url}"
 
     if base.endswith("/"):
       base = base[:-1]
@@ -394,38 +394,29 @@ class HTTPManager(object):
 
         return time.time() - now, result
 
-      # Catch any exceptions that dont have a code (e.g. socket.error).
       except IOError as e:
         self.consecutive_connection_errors += 1
-        # Request failed. If we connected successfully before we attempt a few
-        # connections before we determine that it really failed. This might
-        # happen if the front end is loaded and returns a few throttling 500
-        # messages.
-        if self.active_base_url is not None:
-          # Propagate 406 immediately without retrying, as 406 is a valid
-          # response that indicates a need for enrollment.
-          response = getattr(e, "response", None)
-          if getattr(response, "status_code", None) == 406:
-            raise
-
-          if self.consecutive_connection_errors >= self.retry_error_limit:
-            # We tried several times but this really did not work, just fail it.
-            logging.info(
-                "Too many connection errors to %s, retrying another URL",
-                self.active_base_url)
-            self.active_base_url = None
-            raise e
-
-          # Back off hard to allow the front end to recover.
-          logging.debug(
-              "Unable to connect to frontend. Backing off %s seconds.",
-              self.error_poll_min)
-          self.Wait(self.error_poll_min)
-
-        # We never previously connected, maybe the URL/proxy is wrong? Just fail
-        # right away to allow callers to try a different URL.
-        else:
+        if self.active_base_url is None:
           raise e
+        # Propagate 406 immediately without retrying, as 406 is a valid
+        # response that indicates a need for enrollment.
+        response = getattr(e, "response", None)
+        if getattr(response, "status_code", None) == 406:
+          raise
+
+        if self.consecutive_connection_errors >= self.retry_error_limit:
+          # We tried several times but this really did not work, just fail it.
+          logging.info(
+              "Too many connection errors to %s, retrying another URL",
+              self.active_base_url)
+          self.active_base_url = None
+          raise e
+
+        # Back off hard to allow the front end to recover.
+        logging.debug(
+            "Unable to connect to frontend. Backing off %s seconds.",
+            self.error_poll_min)
+        self.Wait(self.error_poll_min)
 
   def Wait(self, timeout):
     """Wait for the specified timeout."""
@@ -729,8 +720,7 @@ class GRRClientWorker(threading.Thread):
     if not self.nanny_controller:
       return
 
-    msg = self.nanny_controller.GetNannyMessage()
-    if msg:
+    if msg := self.nanny_controller.GetNannyMessage():
       self.SendReply(
           rdf_protodict.DataBlob(string=msg),
           session_id=rdfvalue.FlowSessionID(flow_name="NannyMessage"),
@@ -762,18 +752,12 @@ class GRRClientWorker(threading.Thread):
 
   def OnStartup(self):
     """A handler that is called on client startup."""
-    # We read the transaction log and fail any requests that are in it. If there
-    # is anything in the transaction log we assume its there because we crashed
-    # last time and let the server know.
-
-    last_request = self.transaction_log.Get()
-    if last_request:
+    if last_request := self.transaction_log.Get():
       status = rdf_flows.GrrStatus(
           status=rdf_flows.GrrStatus.ReturnedStatus.CLIENT_KILLED,
           error_message="Client killed during transaction")
       if self.nanny_controller:
-        nanny_status = self.nanny_controller.GetNannyStatus()
-        if nanny_status:
+        if nanny_status := self.nanny_controller.GetNannyStatus():
           status.nanny_status = nanny_status
 
       self.SendReply(
@@ -865,11 +849,7 @@ class SizeLimitedQueue(object):
     # We only queue already serialized objects so we know how large they are.
     message = message.SerializeToBytes()
 
-    if not block:
-      if self.Full():
-        raise queue.Full
-
-    else:
+    if block:
       t0 = time.time()
       while self.Full():
         time.sleep(1)
@@ -877,6 +857,9 @@ class SizeLimitedQueue(object):
 
         if time.time() - t0 > timeout:
           raise queue.Full
+
+    elif self.Full():
+      raise queue.Full
 
     with self._lock:
       self._queue.appendleft(message)
@@ -1072,10 +1055,11 @@ class GRRHTTPClient(object):
 
     # Verify the response is as it should be from the control endpoint.
     response = self.http_manager.OpenServerEndpoint(
-        path="control?api=%s" % config.CONFIG["Network.api"],
+        path=f'control?api={config.CONFIG["Network.api"]}',
         verify_cb=self.VerifyServerControlResponse,
         data=data,
-        headers={"Content-Type": "binary/octet-stream"})
+        headers={"Content-Type": "binary/octet-stream"},
+    )
 
     if response.code == 406:
       self.InitiateEnrolment()
@@ -1369,7 +1353,7 @@ class ClientCommunicator(communicator.Communicator):
       server_certificate.Verify(ca_certificate.GetPublicKey())
     except rdf_crypto.VerificationError as e:
       self.server_name = None
-      raise IOError("Server cert is invalid: %s" % e)
+      raise IOError(f"Server cert is invalid: {e}")
 
     # Make sure that the serial number is higher.
     server_cert_serial = server_certificate.GetSerialNumber()
@@ -1403,4 +1387,4 @@ class ClientCommunicator(communicator.Communicator):
       return self.server_public_key
 
     raise communicator.UnknownServerCertError(
-        "Client wants to talk to %s, not %s" % (common_name, self.server_name))
+        f"Client wants to talk to {common_name}, not {self.server_name}")

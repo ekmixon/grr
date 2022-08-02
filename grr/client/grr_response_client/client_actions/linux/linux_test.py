@@ -50,7 +50,7 @@ class LinuxOnlyTest(client_test_lib.EmptyActionTest):
       elif result.username == "utuser":
         self.assertEqual(result.last_logon, 1510318881 * 1000000)
       else:
-        self.fail("Unexpected user found: %s" % result.username)
+        self.fail(f"Unexpected user found: {result.username}")
 
     self.assertEqual(found, 3)
 

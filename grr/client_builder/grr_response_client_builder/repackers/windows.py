@@ -50,34 +50,34 @@ class WindowsClientRepacker(build.ClientRepacker):
     for path in config_obj["Client.tempdir_roots"]:
       if path.startswith("/"):
         errors.append(
-            "Client.tempdir_root %s starts with /, probably has Unix path." %
-            path)
+            f"Client.tempdir_root {path} starts with /, probably has Unix path.")
       if not path.startswith(install_dir):
         errors.append(
             "Client.tempdir_root %s is not inside the install_dir %s, this is "
             "a security risk" % ((path, install_dir)))
 
     if config_obj.Get("Logging.path").startswith("/"):
-      errors.append("Logging.path starts with /, probably has Unix path. %s" %
-                    config_obj["Logging.path"])
+      errors.append(
+          f'Logging.path starts with /, probably has Unix path. {config_obj["Logging.path"]}'
+      )
 
     if "Windows\\" in config_obj.GetRaw("Logging.path"):
       errors.append("Windows in Logging.path, you probably want "
                     "%(WINDIR|env) instead")
 
     if not config_obj["Client.binary_name"].endswith(".exe"):
-      errors.append("Missing .exe extension on binary_name %s" %
-                    config_obj["Client.binary_name"])
+      errors.append(
+          f'Missing .exe extension on binary_name {config_obj["Client.binary_name"]}'
+      )
 
     if not config_obj["Nanny.binary"].endswith(".exe"):
       errors.append("Missing .exe extension on nanny_binary")
 
-    if errors_fatal and errors:
-      for error in errors:
-        logging.error("Build Config Error: %s", error)
-      raise RuntimeError("Bad configuration generated. Terminating.")
-    else:
+    if not errors_fatal or not errors:
       return errors
+    for error in errors:
+      logging.error("Build Config Error: %s", error)
+    raise RuntimeError("Bad configuration generated. Terminating.")
 
   def _GenerateFleetspeakServiceConfig(self, zip_file):
     orig_fs_config_path = config.CONFIG.Get(
@@ -233,12 +233,6 @@ class WindowsClientRepacker(build.ClientRepacker):
 
     z_template = zipfile.ZipFile(open(template_path, "rb"))
 
-    # Track which files we've copied already.
-    completed_files = [
-        "grr-client.exe", "GRRservice.exe", "dbg_grr-client.exe",
-        "dbg_GRRservice.exe"
-    ]
-
     # Change the name of the main binary to the configured name.
     client_bin_name = config.CONFIG.Get("Client.binary_name", context=context)
 
@@ -253,10 +247,19 @@ class WindowsClientRepacker(build.ClientRepacker):
     bin_name = z_template.getinfo(client_filename)
     output_zip.writestr(client_bin_name, z_template.read(bin_name))
 
-    _CopyFileInZip(z_template, "grr-client.exe.manifest", output_zip,
-                   "%s.manifest" % client_bin_name)
-    completed_files.append("grr-client.exe.manifest")
-
+    _CopyFileInZip(
+        z_template,
+        "grr-client.exe.manifest",
+        output_zip,
+        f"{client_bin_name}.manifest",
+    )
+    completed_files = [
+        "grr-client.exe",
+        "GRRservice.exe",
+        "dbg_grr-client.exe",
+        "dbg_GRRservice.exe",
+        "grr-client.exe.manifest",
+    ]
     # Change the name of the service binary to the configured name.
     service_template = z_template.getinfo(service_filename)
 

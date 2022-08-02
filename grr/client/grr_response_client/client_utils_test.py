@@ -84,10 +84,7 @@ class ClientUtilsTest(test_lib.GRRBaseTest):
     """Test if unknown commands are filtered correctly."""
 
     # ls is not allowed
-    if platform.system() == "Windows":
-      cmd = "dir", []
-    else:
-      cmd = "ls", ["."]
+    cmd = ("dir", []) if platform.system() == "Windows" else ("ls", ["."])
     (stdout, stderr, status, _) = client_utils_common.Execute(*cmd)
     self.assertEqual(status, -1)
     self.assertEqual(stdout, b"")
@@ -100,7 +97,7 @@ class ClientUtilsTest(test_lib.GRRBaseTest):
       cmd = "/bin/echo", ["1"]
     (stdout, stderr, status, _) = client_utils_common.Execute(*cmd)
     self.assertEqual(status, 0)
-    self.assertEqual(stdout, "1{}".format(os.linesep).encode("utf-8"))
+    self.assertEqual(stdout, f"1{os.linesep}".encode("utf-8"))
     self.assertEqual(stderr, b"")
 
     # but not "echo 11"

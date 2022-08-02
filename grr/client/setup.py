@@ -70,7 +70,7 @@ setup_args = dict(
             "grr_client = grr_response_client.distro_entry:Client",
             ("grr_fleetspeak_client = "
              "grr_response_client.distro_entry:FleetspeakClient"),
-            "grr_pool_client = grr_response_client.distro_entry:PoolClient"
+            "grr_pool_client = grr_response_client.distro_entry:PoolClient",
         ]
     },
     cmdclass={"sdist": Sdist},
@@ -79,7 +79,7 @@ setup_args = dict(
     python_requires=">=3.6",
     install_requires=[
         "absl-py==0.9.0",
-        "grr-response-core==%s" % VERSION.get("Version", "packagedepends"),
+        f'grr-response-core=={VERSION.get("Version", "packagedepends")}',
         "PyInstaller==3.6",
         "libfsntfs-python==20200506",
     ],

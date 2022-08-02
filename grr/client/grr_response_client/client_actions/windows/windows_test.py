@@ -27,8 +27,7 @@ class WindowsActionTests(absltest.TestCase):
         self.assertNotEmpty(address.human_readable_address)
         found_address = True
     if not found_address:
-      self.fail("Not a single address found in EnumerateInterfaces {}".format(
-          replies))
+      self.fail(f"Not a single address found in EnumerateInterfaces {replies}")
 
   def testEnumerateInterfacesMock(self):
     # Stub out wmi.WMI().Win32_NetworkAdapterConfiguration()

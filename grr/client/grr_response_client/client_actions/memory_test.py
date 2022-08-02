@@ -47,8 +47,8 @@ class YaraProcessScanTest(client_test_lib.EmptyActionTest):
             num_signature_shards=3),
     ]
     flow_id = "01234567"
-    signature_dir = os.path.join(self.temp_dir, "GRRTest", "Sig_%s" % flow_id)
-    session_id = "C.0123456789abcdef/%s" % flow_id
+    signature_dir = os.path.join(self.temp_dir, "GRRTest", f"Sig_{flow_id}")
+    session_id = f"C.0123456789abcdef/{flow_id}"
 
     results = self.ExecuteAction(
         memory.YaraProcessScan, arg=requests[2], session_id=session_id)
@@ -82,8 +82,8 @@ class YaraProcessScanTest(client_test_lib.EmptyActionTest):
 
   def testSignatureShards_Single(self):
     flow_id = "01234567"
-    signature_dir = os.path.join(self.temp_dir, "GRRTest", "Sig_%s" % flow_id)
-    session_id = "C.0123456789abcdef/%s" % flow_id
+    signature_dir = os.path.join(self.temp_dir, "GRRTest", f"Sig_{flow_id}")
+    session_id = f"C.0123456789abcdef/{flow_id}"
     scan_request = rdf_memory.YaraProcessScanRequest(
         signature_shard=rdf_memory.YaraSignatureShard(index=0, payload=b"123"),
         num_signature_shards=1)

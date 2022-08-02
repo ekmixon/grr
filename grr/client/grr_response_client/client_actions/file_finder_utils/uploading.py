@@ -69,10 +69,7 @@ class TransferStoreUploader(object):
         self._streamer.StreamFile(fd, offset=offset, amount=amount))
 
   def _UploadChunkStream(self, chunk_stream):
-    chunks = []
-    for chunk in chunk_stream:
-      chunks.append(self._UploadChunk(chunk))
-
+    chunks = [self._UploadChunk(chunk) for chunk in chunk_stream]
     return rdf_client_fs.BlobImageDescriptor(
         chunks=chunks, chunk_size=self._streamer.chunk_size)
 

@@ -102,15 +102,13 @@ def CreateClientPool(n):
         cert = rdf_crypto.RSAPrivateKey(initializer=base64.b64decode(l))
         certificates.append(cert)
 
-    for certificate in certificates[:n]:
-      clients.append(
-          PoolGRRClient(
-              private_key=certificate,
-              ca_cert=config.CONFIG["CA.certificate"],
-              fast_poll=flags.FLAGS.fast_poll,
-              send_foreman_request=flags.FLAGS.send_foreman_request,
-          ))
-
+    clients.extend(
+        PoolGRRClient(
+            private_key=certificate,
+            ca_cert=config.CONFIG["CA.certificate"],
+            fast_poll=flags.FLAGS.fast_poll,
+            send_foreman_request=flags.FLAGS.send_foreman_request,
+        ) for certificate in certificates[:n])
     clients_loaded = True
   except (IOError, EOFError):
     clients_loaded = False

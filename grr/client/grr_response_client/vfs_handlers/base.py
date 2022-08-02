@@ -22,7 +22,7 @@ class UnsupportedHandlerError(Error):
   """Raised when an unsupported VFSHandler is used."""
 
   def __init__(self, pathtype):
-    super().__init__("VFSHandler {} is not supported.".format(pathtype))
+    super().__init__(f"VFSHandler {pathtype} is not supported.")
 
 
 class VFSHandler(metaclass=abc.ABCMeta):
@@ -89,7 +89,7 @@ class VFSHandler(metaclass=abc.ABCMeta):
     elif whence == os.SEEK_END:
       self.offset = self.size + offset
     else:
-      raise ValueError("Illegal whence value %s" % whence)
+      raise ValueError(f"Illegal whence value {whence}")
 
   @abc.abstractmethod
   def Read(self, length):
@@ -133,19 +133,16 @@ class VFSHandler(metaclass=abc.ABCMeta):
     if self.IsDirectory():
       return self
 
-    # TODO(user): Add support for more containers here (e.g. registries, zip
-    # files etc).
-    else:
-      if pathtype != rdf_paths.PathSpec.PathType.NTFS:
-        # For now just guess TSK.
-        pathtype = rdf_paths.PathSpec.PathType.TSK
-      handler = self._handlers[pathtype]
-      pathspec = rdf_paths.PathSpec(path="/", pathtype=pathtype)
-      return handler(
-          base_fd=self,
-          handlers=self._handlers,
-          pathspec=pathspec,
-          progress_callback=self.progress_callback)
+    if pathtype != rdf_paths.PathSpec.PathType.NTFS:
+      # For now just guess TSK.
+      pathtype = rdf_paths.PathSpec.PathType.TSK
+    handler = self._handlers[pathtype]
+    pathspec = rdf_paths.PathSpec(path="/", pathtype=pathtype)
+    return handler(
+        base_fd=self,
+        handlers=self._handlers,
+        pathspec=pathspec,
+        progress_callback=self.progress_callback)
 
   def MatchBestComponentName(self, component, pathtype):
     """Returns the name of the component which matches best our base listing.
@@ -274,13 +271,13 @@ class VFSHandler(metaclass=abc.ABCMeta):
       except IOError as e:
         # Can not open the first component, we must raise here.
         if i <= 1:
-          raise IOError("File not found: {}".format(component))
+          raise IOError(f"File not found: {component}")
 
         # Do not try to use TSK to open a not-found registry entry, fail
         # instead. Using TSK would lead to confusing error messages, hiding
         # the fact that the Registry entry is simply not there.
         if component.pathtype == rdf_paths.PathSpec.PathType.REGISTRY:
-          raise IOError("Registry entry not found: {}".format(e))
+          raise IOError(f"Registry entry not found: {e}")
 
         # Insert the remaining path at the front of the pathspec.
         pathspec.Insert(

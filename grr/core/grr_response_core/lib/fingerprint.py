@@ -60,9 +60,7 @@ class Finger(object):
 
   def CurrentRange(self):
     """The working range of this Finger. Returns None if there is none."""
-    if self.ranges:
-      return self.ranges[0]
-    return None
+    return self.ranges[0] if self.ranges else None
 
   def ConsumeRange(self, start, end):
     """Consumes an entire range, or part thereof.
@@ -145,8 +143,8 @@ class Fingerprinter(object):
       Next range of interest in a Range namedtuple.
     """
     ranges = [x.CurrentRange() for x in self.fingers]
-    starts = set([r.start for r in ranges if r])
-    ends = set([r.end for r in ranges if r])
+    starts = {r.start for r in ranges if r}
+    ends = {r.end for r in ranges if r}
     if not starts:
       return None
     min_start = min(starts)
@@ -223,12 +221,11 @@ class Fingerprinter(object):
     results = []
     for finger in self.fingers:
       res = {}
-      leftover = finger.CurrentRange()
-      if leftover:
+      if leftover := finger.CurrentRange():
         if (len(finger.ranges) > 1 or leftover.start != self.filelength or
             leftover.end != self.filelength):
           raise RuntimeError('Non-empty range remains.')
-      res.update(finger.metadata)
+      res |= finger.metadata
       for hasher in finger.hashers:
         res[str(hasher.name)] = hasher.digest()
       results.append(res)
@@ -276,7 +273,6 @@ class Fingerprinter(object):
       A dict with offsets and lengths for CheckSum, CertTable, and SignedData
       fields in the PECOFF binary, for those that are present.
     """
-    extents = {}
     self.file.seek(0, os.SEEK_SET)
     buf = self.file.read(2)
     if buf != b'MZ':
@@ -316,7 +312,7 @@ class Fingerprinter(object):
     else:
       # A ROM image or such, not in the PE/COFF specs. Not sure what to do.
       return None
-    extents['CheckSum'] = RelRange(optional_header_offset + 64, 4)
+    extents = {'CheckSum': RelRange(optional_header_offset + 64, 4)}
     self.file.seek(rva_base, os.SEEK_SET)
     buf = self.file.read(4)
     number_of_rva = struct.unpack('<I', buf)[0]

@@ -173,10 +173,9 @@ class ArtifactCollector(actions.ActionPlugin):
     try:
       source_type_action = switch[source_type]
     except KeyError:
-      raise ValueError("Incorrect source type: %s" % source_type)
+      raise ValueError(f"Incorrect source type: {source_type}")
 
-    for res in source_type_action(source):
-      yield res
+    yield from source_type_action(source)
 
   def _ProcessRegistryKeySource(self, source):
     """Glob for paths in the registry."""
@@ -317,9 +316,9 @@ class ArtifactCollector(actions.ActionPlugin):
     elif action_name == "StatFS":
       action = standard.StatFSFromClient
       paths = []
-      if "action_args" in source.base_source.attributes:
-        if "path_list" in source.base_source.attributes["action_args"]:
-          paths = source.base_source.attributes["action_args"]["path_list"]
+      if ("action_args" in source.base_source.attributes
+          and "path_list" in source.base_source.attributes["action_args"]):
+        paths = source.base_source.attributes["action_args"]["path_list"]
       request = rdf_client_action.StatFSRequest(
           path_list=paths, pathtype=source.path_type)
 
@@ -327,7 +326,7 @@ class ArtifactCollector(actions.ActionPlugin):
       action = operating_system.EnumerateRunningServices
 
     else:
-      raise ValueError("Incorrect action type: %s" % action_name)
+      raise ValueError(f"Incorrect action type: {action_name}")
 
     yield action, request
 
@@ -353,12 +352,7 @@ class ArtifactCollector(actions.ActionPlugin):
         path = kvdict["key"]
       expanded_paths = self._Interpolate(path)
       new_paths.update(expanded_paths)
-    if has_glob:
-      # TODO(user): If a path has a wildcard we need to glob the filesystem
-      # for patterns to collect matching files. The corresponding flow is
-      # filesystem.Glob.
-      pass
-    else:
+    if not has_glob:
       action = standard.GetFileStatFromClient
       for new_path in new_paths:
         pathspec = rdf_paths.PathSpec(
@@ -380,9 +374,8 @@ def _ExtractPath(response, pathspec_attribute=None):
   """
   path_specification = response
 
-  if pathspec_attribute is not None:
-    if response.HasField(pathspec_attribute):
-      path_specification = response.Get(pathspec_attribute)
+  if pathspec_attribute is not None and response.HasField(pathspec_attribute):
+    path_specification = response.Get(pathspec_attribute)
 
   if path_specification.HasField("pathspec"):
     path_specification = path_specification.pathspec
@@ -390,6 +383,4 @@ def _ExtractPath(response, pathspec_attribute=None):
   if path_specification.HasField("path"):
     path_specification = path_specification.path
 
-  if isinstance(path_specification, Text):
-    return path_specification
-  return None
+  return path_specification if isinstance(path_specification, Text) else None

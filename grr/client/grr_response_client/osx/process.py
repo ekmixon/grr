@@ -83,9 +83,8 @@ class Process(object):
   def Open(self):
     self.task = ctypes.c_uint32()
     self.mytask = libc.mach_task_self()
-    ret = libc.task_for_pid(self.mytask, ctypes.c_int(self.pid),
-                            ctypes.pointer(self.task))
-    if ret:
+    if ret := libc.task_for_pid(self.mytask, ctypes.c_int(self.pid),
+                                ctypes.pointer(self.task)):
       if ret == 5:
         # Most likely this means access denied. This is not perfect
         # but there is no way to find out.
@@ -93,7 +92,7 @@ class Process(object):
             "Access denied (task_for_pid returned 5).")
 
       raise process_error.ProcessError(
-          "task_for_pid failed with error code : %s" % ret)
+          f"task_for_pid failed with error code : {ret}")
 
   def Regions(self,
               skip_executable_regions=False,
@@ -150,7 +149,7 @@ class Process(object):
         break
 
       if r != 0:
-        raise process_error.ProcessError("Error in mach_vm_region, ret=%s" % r)
+        raise process_error.ProcessError(f"Error in mach_vm_region, ret={r}")
 
       if depth > 0 and address.value >= depth_end_addresses[depth]:
         del depth_end_addresses[depth]
@@ -195,11 +194,14 @@ class Process(object):
     pdata = ctypes.c_void_p(0)
     data_cnt = ctypes.c_uint32(0)
 
-    ret = libc.mach_vm_read(self.task, ctypes.c_ulonglong(address),
-                            ctypes.c_longlong(num_bytes), ctypes.pointer(pdata),
-                            ctypes.pointer(data_cnt))
-    if ret:
-      raise process_error.ProcessError("Error in mach_vm_read, ret=%s" % ret)
+    if ret := libc.mach_vm_read(
+        self.task,
+        ctypes.c_ulonglong(address),
+        ctypes.c_longlong(num_bytes),
+        ctypes.pointer(pdata),
+        ctypes.pointer(data_cnt),
+    ):
+      raise process_error.ProcessError(f"Error in mach_vm_read, ret={ret}")
     buf = ctypes.string_at(pdata.value, data_cnt.value)
     libc.vm_deallocate(self.mytask, pdata, data_cnt)
     return buf

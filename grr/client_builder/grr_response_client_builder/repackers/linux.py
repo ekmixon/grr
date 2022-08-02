@@ -46,8 +46,8 @@ class LinuxClientRepacker(build.ClientRepacker):
          config.CONFIG.Get("ClientBuilder.target_dir", context=self.context)))
     if package_name == "grr-client":
       # Need to rename the template path or the move will fail.
-      shutil.move(template_binary_dir, "%s-template" % template_binary_dir)
-      template_binary_dir = "%s-template" % template_binary_dir
+      shutil.move(template_binary_dir, f"{template_binary_dir}-template")
+      template_binary_dir = f"{template_binary_dir}-template"
 
     utils.EnsureDirExists(os.path.dirname(target_binary_dir))
     shutil.move(template_binary_dir, target_binary_dir)
@@ -79,7 +79,7 @@ class LinuxClientRepacker(build.ClientRepacker):
 
     # Generate directories for the /usr/sbin link.
     utils.EnsureDirExists(
-        os.path.join(template_path, "dist/debian/%s/usr/sbin" % package_name))
+        os.path.join(template_path, f"dist/debian/{package_name}/usr/sbin"))
 
     if os.path.exists(os.path.join(target_binary_dir, "wrapper.sh.in")):
       build_helpers.GenerateFile(
@@ -102,7 +102,7 @@ class LinuxClientRepacker(build.ClientRepacker):
             os.path.join(template_path, "dist", "debian", package_name,
                          "etc/fleetspeak-client/client.config"))
 
-        for filename in (package_name + ".postinst", package_name + ".postrm"):
+        for filename in (f"{package_name}.postinst", f"{package_name}.postrm"):
           os.remove(os.path.join(template_path, "dist", "debian", filename))
 
       else:
@@ -120,22 +120,25 @@ class LinuxClientRepacker(build.ClientRepacker):
       # Generate the upstart template.
       build_helpers.GenerateFile(
           os.path.join(template_path, "dist/debian/upstart.in/grr-client.conf"),
-          os.path.join(template_path, "dist/debian/%s.upstart" % package_name),
-          context=self.context)
+          os.path.join(template_path, f"dist/debian/{package_name}.upstart"),
+          context=self.context,
+      )
 
       # Generate the initd template. The init will not run if it detects upstart
       # is present.
       build_helpers.GenerateFile(
           os.path.join(template_path, "dist/debian/initd.in/grr-client"),
-          os.path.join(template_path, "dist/debian/%s.init" % package_name),
-          context=self.context)
+          os.path.join(template_path, f"dist/debian/{package_name}.init"),
+          context=self.context,
+      )
 
       # Generate the systemd unit file.
       build_helpers.GenerateFile(
           os.path.join(template_path,
                        "dist/debian/systemd.in/grr-client.service"),
-          os.path.join(template_path, "dist/debian/%s.service" % package_name),
-          context=self.context)
+          os.path.join(template_path, f"dist/debian/{package_name}.service"),
+          context=self.context,
+      )
 
     # Clean up the template dirs.
     # Some of the dirs might be missing in older template versions, so removing
@@ -250,7 +253,7 @@ class LinuxClientRepacker(build.ClientRepacker):
 
       try:
         os.chdir(template_dir)
-        command = [buildpackage_binary, "-uc", "-d", "-b", "-a%s" % arch]
+        command = [buildpackage_binary, "-uc", "-d", "-b", f"-a{arch}"]
 
         try:
           subprocess.check_output(command, stderr=subprocess.STDOUT)
@@ -277,15 +280,15 @@ class LinuxClientRepacker(build.ClientRepacker):
           config.CONFIG.Get(
               "ClientBuilder.output_extension", context=self.context)
       ]:
-        input_name = "%s%s" % (filename_base, extension)
-        output_name = "%s%s" % (output_base, extension)
+        input_name = f"{filename_base}{extension}"
+        output_name = f"{output_base}{extension}"
 
         # TODO(user):pytype: incorrect move() definition in typeshed.
         # pytype: disable=wrong-arg-types
         shutil.move(
             os.path.join(tmp_dir, input_name),
             os.path.join(os.path.dirname(output_path), output_name))
-        # pytype: enable=wrong-arg-types
+            # pytype: enable=wrong-arg-types
 
       logging.info("Created package %s", output_path)
       return output_path
@@ -383,16 +386,15 @@ class CentosClientRepacker(LinuxClientRepacker):
         self._GenerateInitConfigs(template_dir, rpm_build_dir)
 
       # Generate spec
-      spec_filename = os.path.join(rpm_specs_dir, "%s.spec" % client_name)
+      spec_filename = os.path.join(rpm_specs_dir, f"{client_name}.spec")
       build_helpers.GenerateFile(
           os.path.join(tmp_dir, "dist/rpmbuild/grr.spec.in"),
           spec_filename,
           context=self.context)
 
       # Generate prelinking blacklist file
-      prelink_target_filename = os.path.join(rpm_build_dir,
-                                             "etc/prelink.conf.d",
-                                             "%s.conf" % client_name)
+      prelink_target_filename = os.path.join(rpm_build_dir, "etc/prelink.conf.d",
+                                             f"{client_name}.conf")
 
       utils.EnsureDirExists(os.path.dirname(prelink_target_filename))
       build_helpers.GenerateFile(
@@ -429,8 +431,15 @@ class CentosClientRepacker(LinuxClientRepacker):
         os.chmod(os.path.join(target_binary_dir, "wrapper.sh"), 0o755)
 
       command = [
-          rpmbuild_binary, "--define", "_topdir " + rpm_root_dir, "--target",
-          client_arch, "--buildroot", rpm_buildroot_dir, "-bb", spec_filename
+          rpmbuild_binary,
+          "--define",
+          f"_topdir {rpm_root_dir}",
+          "--target",
+          client_arch,
+          "--buildroot",
+          rpm_buildroot_dir,
+          "-bb",
+          spec_filename,
       ]
       try:
         subprocess.check_output(command, stderr=subprocess.STDOUT)
@@ -442,8 +451,10 @@ class CentosClientRepacker(LinuxClientRepacker):
       client_version = config.CONFIG.Get(
           "Template.version_string", context=self.context)
       rpm_filename = os.path.join(
-          rpm_rpms_dir, client_arch,
-          "%s-%s-1.%s.rpm" % (client_name, client_version, client_arch))
+          rpm_rpms_dir,
+          client_arch,
+          f"{client_name}-{client_version}-1.{client_arch}.rpm",
+      )
 
       utils.EnsureDirExists(os.path.dirname(output_path))
       shutil.move(rpm_filename, output_path)
@@ -487,9 +498,8 @@ class CentosClientRepacker(LinuxClientRepacker):
 
     # Generate systemd unit
     if config.CONFIG["Template.version_numeric"] >= 3125:
-      systemd_target_filename = os.path.join(rpm_build_dir,
-                                             "usr/lib/systemd/system/",
-                                             "%s.service" % client_name)
+      systemd_target_filename = os.path.join(
+          rpm_build_dir, "usr/lib/systemd/system/", f"{client_name}.service")
 
       utils.EnsureDirExists(os.path.dirname(systemd_target_filename))
       build_helpers.GenerateFile(

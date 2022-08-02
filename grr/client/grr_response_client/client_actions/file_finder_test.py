@@ -64,7 +64,7 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
             **kw))
 
   def testFileFinder(self):
-    paths = [self.base_path + "/*"]
+    paths = [f"{self.base_path}/*"]
     results = self._RunFileFinder(paths, self.stat_action)
     self.assertEqual(
         self._GetRelativeResults(results), os.listdir(self.base_path))
@@ -77,12 +77,12 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
         os.listdir(profiles_path))
 
   def testNonExistentPath(self):
-    paths = [self.base_path + "/does/not/exist/**"]
+    paths = [f"{self.base_path}/does/not/exist/**"]
     results = self._RunFileFinder(paths, self.stat_action)
     self.assertEmpty(results)
 
   def testRecursiveGlobCallsProgressWithoutMatches(self):
-    paths = [self.base_path + "/**4/nonexistent"]
+    paths = [f"{self.base_path}/**4/nonexistent"]
 
     progress = mock.MagicMock()
 
@@ -97,7 +97,7 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
     self.assertGreater(progress.call_count, 100)
 
   def testRecursiveGlob(self):
-    paths = [self.base_path + "/**3"]
+    paths = [f"{self.base_path}/**3"]
     results = self._RunFileFinder(paths, self.stat_action)
     relative_results = self._GetRelativeResults(results)
     self.assertIn("a/b", relative_results)
@@ -106,7 +106,7 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
     self.assertNotIn("a/b/c/helloc.txt", relative_results)
     self.assertNotIn("a/b/d/hellod.txt", relative_results)
 
-    paths = [self.base_path + "/**4"]
+    paths = [f"{self.base_path}/**4"]
     results = self._RunFileFinder(paths, self.stat_action)
     relative_results = self._GetRelativeResults(results)
     self.assertIn("a/b", relative_results)
@@ -116,14 +116,14 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
     self.assertIn("a/b/d/hellod.txt", relative_results)
 
   def testRegexGlob(self):
-    paths = [self.base_path + "/valid_win_mbr*.gz"]
+    paths = [f"{self.base_path}/valid_win_mbr*.gz"]
     results = self._RunFileFinder(paths, self.stat_action)
     relative_results = self._GetRelativeResults(results)
-    for glob_result in glob.glob(self.base_path + "/valid_win_mbr*gz"):
+    for glob_result in glob.glob(f"{self.base_path}/valid_win_mbr*gz"):
       self.assertIn(os.path.basename(glob_result), relative_results)
 
   def testRecursiveRegexGlob(self):
-    paths = [self.base_path + "/**3/*.gz"]
+    paths = [f"{self.base_path}/**3/*.gz"]
     results = self._RunFileFinder(paths, self.stat_action)
     relative_results = self._GetRelativeResults(results)
     self.assertIn("profiles/v1.0/nt/index.gz", relative_results)
@@ -131,7 +131,7 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
     for r in relative_results:
       self.assertEqual(os.path.splitext(r)[1], ".gz")
 
-    paths = [self.base_path + "/**2/*.gz"]
+    paths = [f"{self.base_path}/**2/*.gz"]
     results = self._RunFileFinder(paths, self.stat_action)
     relative_results = self._GetRelativeResults(results)
     self.assertNotIn("profiles/v1.0/nt/index.gz", relative_results)
@@ -140,20 +140,20 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
       self.assertEqual(os.path.splitext(r)[1], ".gz")
 
   def testDoubleRecursionFails(self):
-    paths = [self.base_path + "/**/**/test.exe"]
+    paths = [f"{self.base_path}/**/**/test.exe"]
     with self.assertRaises(ValueError):
       self._RunFileFinder(paths, self.stat_action)
 
   def testInvalidInput(self):
-    paths = [self.base_path + "/r**z"]
+    paths = [f"{self.base_path}/r**z"]
     with self.assertRaises(ValueError):
       self._RunFileFinder(paths, self.stat_action)
 
-    paths = [self.base_path + "/**.exe"]
+    paths = [f"{self.base_path}/**.exe"]
     with self.assertRaises(ValueError):
       self._RunFileFinder(paths, self.stat_action)
 
-    paths = [self.base_path + "/test**"]
+    paths = [f"{self.base_path}/test**"]
     with self.assertRaises(ValueError):
       self._RunFileFinder(paths, self.stat_action)
 
@@ -194,7 +194,7 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
       with io.open(lnk_target_contents, "wb") as fd:
         fd.write(b"sometext")
 
-      paths = [contains_lnk + "/**"]
+      paths = [f"{contains_lnk}/**"]
       results = self._RunFileFinder(paths, self.stat_action)
       relative_results = self._GetRelativeResults(results, base_path=test_dir)
 
@@ -363,8 +363,8 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
         paths, self.stat_action, conditions=[condition])
     self.assertLen(raw_results, 1)
     self.assertLen(raw_results[0].matches, 6)
+    needle = b"mydomain.com"
     for buffer_ref in raw_results[0].matches:
-      needle = b"mydomain.com"
       self.assertEqual(buffer_ref.data[bytes_before:bytes_before + len(needle)],
                        needle)
 
@@ -829,15 +829,15 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
 
       elif xdev == rdf_file_finder.FileFinderArgs.XDev.NEVER:
         base_dev = os.stat(path).st_dev
-        return set([base_dev])
+        return {base_dev}
 
       elif xdev == rdf_file_finder.FileFinderArgs.XDev.LOCAL:
         base_dev = os.stat(path).st_dev
         # The fake device numbers are base + 5 for local and base + 15 for net.
-        return set([base_dev, base_dev + 5])
+        return {base_dev, base_dev + 5}
 
       else:
-        raise ValueError("Incorrect `xdev` value: %s" % xdev)
+        raise ValueError(f"Incorrect `xdev` value: {xdev}")
 
     def MyStat(path):
       stat_entry = MyStat.old_target(path)
@@ -847,19 +847,15 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
         old_dev = stat_entry.st_dev
         # Make sure we are modifying the right field.
         self.assertEqual(old_dev, stat_entry_list[2])
-        if "local_dev" in path:
-          stat_entry_list[2] = old_dev + 5
-        else:
-          stat_entry_list[2] = old_dev + 15
-
+        stat_entry_list[2] = old_dev + 5 if "local_dev" in path else old_dev + 15
         return type(stat_entry)(stat_entry_list)
 
       return stat_entry
 
     with utils.MultiStubber(
-        (os, "stat", MyStat),
-        (globbing, "_GetAllowedDevices", MyGetAllowedDevices)):
-      paths = [test_dir + "/**5"]
+          (os, "stat", MyStat),
+          (globbing, "_GetAllowedDevices", MyGetAllowedDevices)):
+      paths = [f"{test_dir}/**5"]
       self.RunAndCheck(
           paths,
           expected=[
@@ -891,14 +887,14 @@ class FileFinderTest(client_test_lib.EmptyActionTest):
 class ClientActionExecutor(object):
 
   def __init__(self):
-    self.wkfs = dict()
+    self.wkfs = {}
 
   def RegisterWellKnownFlow(self, wkf):
     session_id = rdfvalue.SessionID(flow_name=wkf.FLOW_NAME)
     self.wkfs[str(session_id)] = wkf
 
   def Execute(self, action_cls, args):
-    responses = list()
+    responses = []
 
     def SendReply(value,
                   session_id=None,
@@ -937,7 +933,7 @@ class MockTransferStore(object):
   FLOW_NAME = "TransferStore"
 
   def __init__(self):
-    self.blobs = dict()
+    self.blobs = {}
 
   def ProcessMessages(self, messages):
     for message in messages:
@@ -953,7 +949,7 @@ class MockTransferStore(object):
     elif data_blob.compression == "ZCOMPRESSION":
       data = zlib.decompress(data_blob.data)
     else:
-      raise ValueError("unknown blob compression: %s" % data_blob.compression)
+      raise ValueError(f"unknown blob compression: {data_blob.compression}")
 
     digest = hashlib.sha256(data).digest()
     self.blobs[digest] = data
@@ -963,7 +959,7 @@ class MockTransferStore(object):
     # original data instead of its digest.
     RichBlob = collections.namedtuple("RichBlob", ("data", "offset", "length"))  # pylint: disable=invalid-name
 
-    blobs = list()
+    blobs = []
     for chunk in blobdesc.chunks:
       blob = RichBlob(
           data=self.blobs[chunk.digest],

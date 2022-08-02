@@ -27,12 +27,11 @@ def _StripLibraries(directory):
   # of this code.
   matches = []
   for root, _, filenames in os.walk(directory):
-    for filename in fnmatch.filter(filenames, "*.so*"):
-      # strip dies with errors on ffi libs, leave them alone.
-      if "ffi" not in filename:
-        matches.append(os.path.join(root, filename))
-  cmd = ["strip"]
-  cmd.extend(matches)
+    matches.extend(
+        os.path.join(root, filename)
+        for filename in fnmatch.filter(filenames, "*.so*")
+        if "ffi" not in filename)
+  cmd = ["strip", *matches]
   subprocess.check_call(cmd)
 
 

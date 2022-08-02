@@ -44,12 +44,7 @@ def ProcessIterator(pids, process_regex_string, cmdline_regex_string,
   Yields:
     psutils.Process objects matching all criteria.
   """
-  pids = set(pids)
-  if ignore_grr_process:
-    grr_pid = psutil.Process().pid
-  else:
-    grr_pid = -1
-
+  grr_pid = psutil.Process().pid if ignore_grr_process else -1
   if process_regex_string:
     process_regex = re.compile(process_regex_string)
   else:
@@ -60,7 +55,7 @@ def ProcessIterator(pids, process_regex_string, cmdline_regex_string,
   else:
     cmdline_regex = None
 
-  if pids:
+  if pids := set(pids):
     process_iterator = []
     for pid in pids:
       try:
@@ -170,8 +165,9 @@ class YaraProcessScan(actions.ActionPlugin):
       scan_response.errors.Append(
           rdf_memory.ProcessMemoryError(
               process=rdf_process,
-              error="Scanning timed out (%s)." %
-              (rdfvalue.RDFDatetime.Now() - start_time)))
+              error=
+              f"Scanning timed out ({rdfvalue.RDFDatetime.Now() - start_time}).",
+          ))
       return
     except Exception as e:  # pylint: disable=broad-except
       scan_response.errors.Append(
@@ -201,8 +197,10 @@ class YaraProcessScan(actions.ActionPlugin):
     def GetShardName(shard_index, num_shards):
       return "shard_%02d_of_%02d" % (shard_index, num_shards)
 
-    signature_dir = os.path.join(tempfiles.GetDefaultGRRTempDirectory(),
-                                 "Sig_%s" % self.session_id.Basename())
+    signature_dir = os.path.join(
+        tempfiles.GetDefaultGRRTempDirectory(),
+        f"Sig_{self.session_id.Basename()}",
+    )
     # Create the temporary directory and set permissions, if it does not exist.
     tempfiles.EnsureTempDirIsSane(signature_dir)
     shard_path = os.path.join(
@@ -392,7 +390,7 @@ class YaraProcessDump(actions.ActionPlugin):
     # TODO: Remove workaround after client_utils are fixed.
     canonical_path = client_utils.LocalPathToCanonicalPath(filepath)
     if not canonical_path.startswith("/"):
-      canonical_path = "/" + canonical_path
+      canonical_path = f"/{canonical_path}"
 
     return rdf_paths.PathSpec(
         path=canonical_path, pathtype=rdf_paths.PathSpec.PathType.TMPFILE)
@@ -412,8 +410,7 @@ class YaraProcessDump(actions.ActionPlugin):
         total_regions = len(regions)
         regions = _ApplySizeLimit(regions, args.size_limit)
         if len(regions) < total_regions:
-          response.error = ("Byte limit exceeded. Writing {} of {} "
-                            "regions.").format(len(regions), total_regions)
+          response.error = f"Byte limit exceeded. Writing {len(regions)} of {total_regions} regions."
       else:
         for region in regions:
           region.dumped_size = region.size
@@ -434,9 +431,8 @@ class YaraProcessDump(actions.ActionPlugin):
   def Run(self, args):
     if args.prioritize_offsets and len(args.pids) != 1:
       raise ValueError(
-          "Supplied prioritize_offsets {} for PIDs {} in YaraProcessDump. "
-          "Required exactly one PID.".format(args.prioritize_offsets,
-                                             args.pids))
+          f"Supplied prioritize_offsets {args.prioritize_offsets} for PIDs {args.pids} in YaraProcessDump. Required exactly one PID."
+      )
 
     result = rdf_memory.YaraProcessDumpResponse()
 

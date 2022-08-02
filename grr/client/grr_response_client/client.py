@@ -45,7 +45,7 @@ flags.DEFINE_integer(
 def _start_remote_debugging(port):
   """Sets up remote debugging using pydevd, connecting to localhost:`port`."""
   try:
-    print("Connecting to remote debugger on localhost:{}.".format(port))
+    print(f"Connecting to remote debugger on localhost:{port}.")
     import pydevd  # pylint: disable=g-import-not-at-top
     pydevd.settrace(
         "localhost",

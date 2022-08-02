@@ -258,7 +258,7 @@ def ParseIfaddrs(ifaddrs):
       alen = sockaddrdl.contents.sdl_alen
       iface.mac_address = bytes(sockaddrdl.contents.sdl_data[nlen:nlen + alen])
     else:
-      raise ValueError("Unexpected socket address family: %s" % iffamily)
+      raise ValueError(f"Unexpected socket address family: {iffamily}")
 
   return ifaces.values()
 
@@ -272,9 +272,7 @@ def EnumerateInterfacesFromClient(args):
   p_ifa = ctypes.pointer(ifa)
   libc.getifaddrs(ctypes.pointer(p_ifa))
 
-  for iface in ParseIfaddrs(p_ifa):
-    yield iface
-
+  yield from ParseIfaddrs(p_ifa)
   libc.freeifaddrs(p_ifa)
 
 
@@ -371,11 +369,11 @@ def CreateServiceProto(job):
 
   mach_dict = job.get("MachServices", {}, stringify=False)
   for key, value in mach_dict.items():
-    service.machservice.Append("%s:%s" % (key, value))
+    service.machservice.Append(f"{key}:{value}")
 
   job_mach_dict = job.get("PerJobMachServices", {}, stringify=False)
   for key, value in job_mach_dict.items():
-    service.perjobmachservice.Append("%s:%s" % (key, value))
+    service.perjobmachservice.Append(f"{key}:{value}")
 
   if "PID" in job:
     service.pid = job["PID"].value
@@ -408,15 +406,14 @@ def OSXEnumerateRunningServicesFromClient(args):
 
   if version_array[:2] < [10, 6]:
     raise UnsupportedOSVersionError(
-        "ServiceManagement API unsupported on < 10.6. This client is %s" %
-        osx_version.VersionString())
+        f"ServiceManagement API unsupported on < 10.6. This client is {osx_version.VersionString()}"
+    )
 
   launchd_list = GetRunningLaunchDaemons()
 
   parser = osx_launchd.OSXLaunchdJobDict(launchd_list)
   for job in parser.Parse():
-    response = CreateServiceProto(job)
-    yield response
+    yield CreateServiceProto(job)
 
 
 class OSXEnumerateRunningServices(actions.ActionPlugin):
@@ -456,11 +453,7 @@ class Uninstall(actions.ActionPlugin):
       else:
         msg = "Could not remove plist file."
 
-    # Get the directory we are running in from pyinstaller. This is either the
-    # GRR directory which we should delete (onedir mode) or a generated temp
-    # directory which we can delete without problems in onefile mode.
-    directory = getattr(sys, "_MEIPASS", None)
-    if directory:
+    if directory := getattr(sys, "_MEIPASS", None):
       shutil.rmtree(directory, ignore_errors=True)
 
     self.SendReply(rdf_protodict.DataBlob(string=msg))

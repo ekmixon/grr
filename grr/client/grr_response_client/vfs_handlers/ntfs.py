@@ -92,23 +92,19 @@ class NTFSFile(vfs_base.VFSHandler):
       self.fd = self.volume.get_file_entry_by_path(path)
 
     if self.fd is None:
-      raise IOError("Failed to open {}".format(path))
+      raise IOError(f"Failed to open {path}")
 
     # Determine data stream
     if pathspec is not None and pathspec.HasField("stream_name"):
-      if pathspec.path_options == rdf_paths.PathSpec.Options.CASE_LITERAL:
-        self.data_stream = self.fd.get_alternate_data_stream_by_name(
-            pathspec.stream_name)
-      else:
-        self.data_stream = _GetAlternateDataStreamCaseInsensitive(
-            self.fd, pathspec.stream_name)
+      self.data_stream = (
+          self.fd.get_alternate_data_stream_by_name(pathspec.stream_name) if
+          pathspec.path_options == rdf_paths.PathSpec.Options.CASE_LITERAL else
+          _GetAlternateDataStreamCaseInsensitive(self.fd, pathspec.stream_name))
       if self.data_stream is None:
-        raise IOError("Failed to open data stream {} in {}.".format(
-            pathspec.stream_name, path))
+        raise IOError(f"Failed to open data stream {pathspec.stream_name} in {path}.")
       self.pathspec.last.stream_name = self.data_stream.name
-    else:
-      if self.fd.has_default_data_stream():
-        self.data_stream = self.fd
+    elif self.fd.has_default_data_stream():
+      self.data_stream = self.fd
 
     # self.pathspec will be used for future access to this file.
 
@@ -119,10 +115,7 @@ class NTFSFile(vfs_base.VFSHandler):
     self.pathspec.last.inode = self.fd.file_reference
 
     if not self.IsDirectory():
-      if self.data_stream is not None:
-        self.size = self.data_stream.get_size()
-      else:
-        self.size = 0
+      self.size = self.data_stream.get_size() if self.data_stream is not None else 0
 
   def Stat(self,
            ext_attrs: bool = False,
@@ -164,8 +157,7 @@ class NTFSFile(vfs_base.VFSHandler):
 
   def _CheckIsDirectory(self) -> None:
     if not self.IsDirectory():
-      raise IOError("{} is not a directory".format(
-          self.pathspec.CollapsePath()))
+      raise IOError(f"{self.pathspec.CollapsePath()} is not a directory")
 
   def _Stat(
       self,

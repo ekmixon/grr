@@ -60,8 +60,7 @@ class ArtifactCollectorTest(client_test_lib.EmptyActionTest):
 
   def RunArtifactCollector(self, request):
     result = self.RunAction(artifact_collector.ArtifactCollector, request)[0]
-    collected_artifact = result.collected_artifacts[0]
-    return collected_artifact
+    return result.collected_artifacts[0]
 
   @artifact_test_lib.PatchCleanArtifactRegistry
   def testCommandArtifact(self, registry):
@@ -139,7 +138,7 @@ class ArtifactCollectorTest(client_test_lib.EmptyActionTest):
     request = GetRequest(source, "TestClientActionArtifact")
 
     with utils.MultiStubber((builtins, "open", MockedOpen),
-                            (glob, "glob", lambda x: ["/var/log/wtmp"])):
+                              (glob, "glob", lambda x: ["/var/log/wtmp"])):
       result = self.RunAction(artifact_collector.ArtifactCollector, request)[0]
       collected_artifact = result.collected_artifacts[0]
 
@@ -148,7 +147,7 @@ class ArtifactCollectorTest(client_test_lib.EmptyActionTest):
         value = action_result.value
         self.assertIsInstance(value, rdf_client.User)
         if value.username not in ["user1", "user2", "user3", "utuser"]:
-          self.fail("Unexpected user found: %s" % value.username)
+          self.fail(f"Unexpected user found: {value.username}")
 
       # Test that the users were added to the knowledge base
       self.assertLen(result.knowledge_base.users, 4)
@@ -555,7 +554,7 @@ class FakeFileParser(parsers.SingleFileParser[rdf_protodict.AttributedDict]):
   ) -> Iterator[rdf_protodict.AttributedDict]:
     del knowledge_base  # Unused.
 
-    lines = set(l.strip() for l in filedesc.read().splitlines())
+    lines = {l.strip() for l in filedesc.read().splitlines()}
 
     users = list(filter(None, lines))
 
@@ -581,7 +580,7 @@ class FakeFileMultiParser(parsers.MultiFileParser[rdf_protodict.AttributedDict]
 
     lines = set()
     for file_obj in filedescs:
-      lines.update(set(l.strip() for l in file_obj.read().splitlines()))
+      lines.update({l.strip() for l in file_obj.read().splitlines()})
 
     users = list(filter(None, lines))
 

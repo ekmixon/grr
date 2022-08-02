@@ -179,8 +179,7 @@ class ListDirectory(ReadBuffer):
 
 def GetFileStatFromClient(args):
   fd = vfs.VFSOpen(args.pathspec)
-  stat_entry = fd.Stat(ext_attrs=args.collect_ext_attrs)
-  yield stat_entry
+  yield fd.Stat(ext_attrs=args.collect_ext_attrs)
 
 
 class GetFileStat(actions.ActionPlugin):
@@ -261,11 +260,7 @@ class ExecuteBinaryCommand(actions.ActionPlugin):
   def WriteBlobToFile(self, request):
     """Writes the blob to a file and returns its path."""
     # First chunk truncates the file, later chunks append.
-    if request.offset == 0:
-      mode = "w+b"
-    else:
-      mode = "r+b"
-
+    mode = "w+b" if request.offset == 0 else "r+b"
     temp_file = tempfiles.CreateGRRTempFile(
         filename=request.write_path, mode=mode)
     with temp_file:
@@ -338,7 +333,7 @@ class ExecutePython(actions.ActionPlugin):
         config.CONFIG["Client.executable_signing_public_key"])
 
     # The execed code can assign to this variable if it wants to return data.
-    logging.debug("exec for python code %s", args.python_code.data[0:100])
+    logging.debug("exec for python code %s", args.python_code.data[:100])
 
     context = globals().copy()
     context["py_args"] = args.py_args.ToDict()

@@ -136,11 +136,10 @@ class File(vfs_base.VFSHandler):
     try:
       if not self.files:
         # Note that the encoding of local path is system specific
-        local_path = client_utils.CanonicalPathToLocalPath(self.path + "/")
+        local_path = client_utils.CanonicalPathToLocalPath(f"{self.path}/")
         self.files = [
             utils.SmartUnicode(entry) for entry in os.listdir(local_path)
         ]
-    # Some filesystems do not support unicode properly
     except UnicodeEncodeError as e:
       raise IOError(str(e))
     except (IOError, OSError) as e:
@@ -153,19 +152,16 @@ class File(vfs_base.VFSHandler):
 
         if pathspec.last.HasField("file_size_override"):
           self.size = pathspec.last.file_size_override - self.file_offset
-        else:
-          # Work out how large the file is.
-          if self.size is None:
-            fd.Seek(0, 2)
-            end = fd.Tell()
-            if end == 0:
-              # This file is not seekable, we just use the default.
-              end = pathspec.last.file_size_override
+        elif self.size is None:
+          fd.Seek(0, 2)
+          end = fd.Tell()
+          if end == 0:
+            # This file is not seekable, we just use the default.
+            end = pathspec.last.file_size_override
 
-            self.size = end - self.file_offset
+          self.size = end - self.file_offset
 
       error = None
-    # Some filesystems do not support unicode properly
     except UnicodeEncodeError as e:
       raise IOError(str(e))
 
@@ -215,7 +211,7 @@ class File(vfs_base.VFSHandler):
   def _GetDepth(self, path):
     if path[0] != os.path.sep:
       raise RuntimeError("Relative paths aren't supported.")
-    return len(re.findall(r"%s+[^%s]+" % (os.path.sep, os.path.sep), path))
+    return len(re.findall(f"{os.path.sep}+[^{os.path.sep}]+", path))
 
   def _GetDevice(self, path):
     try:
@@ -301,7 +297,7 @@ class File(vfs_base.VFSHandler):
   def ListFiles(self, ext_attrs=False):
     """List all files in the dir."""
     if not self.IsDirectory():
-      raise IOError("%s is not a directory." % self.path)
+      raise IOError(f"{self.path} is not a directory.")
 
     for path in self.files:
       try:

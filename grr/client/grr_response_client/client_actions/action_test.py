@@ -232,7 +232,7 @@ class ActionTest(client_test_lib.EmptyActionTest):
       # with at some point, for the time being this works and is more in line
       # with the original function (`os.path.ismount` works with bytestrings as
       # well).
-      return path == "/" or path == b"/"
+      return path in ["/", b"/"]
 
     with utils.MultiStubber((os, "statvfs", MockStatFS),
                             (os.path, "ismount", MockIsMount)):

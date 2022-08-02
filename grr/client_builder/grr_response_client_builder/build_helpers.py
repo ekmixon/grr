@@ -78,7 +78,7 @@ def GenerateFile(input_filename: Optional[Text] = None,
     raise ValueError("context must be provided.")
 
   if input_filename is None:
-    input_filename = output_filename + ".in"
+    input_filename = f"{output_filename}.in"
   if output_filename[-3:] == ".in":
     output_filename = output_filename[:-3]
   logging.debug("Generating file %s from %s", output_filename, input_filename)
@@ -216,12 +216,11 @@ def WriteBuildYaml(fd, build_timestamp=True, context=None):
 
   output_keys = set(output.keys())
   if output_keys != yaml_keys:
-    raise RuntimeError("Bad build.yaml: expected %s, got %s" %
-                       (yaml_keys, output_keys))
+    raise RuntimeError(f"Bad build.yaml: expected {yaml_keys}, got {output_keys}")
 
   for k, v in output.items():
     if v is None:
-      raise RuntimeError("Bad build.yaml: expected %s to be not None" % k)
+      raise RuntimeError(f"Bad build.yaml: expected {k} to be not None")
 
   fd.write(yaml.Dump(output))
 
@@ -238,10 +237,8 @@ def ValidateEndConfig(config_obj, errors_fatal=True, context=None):
     if not location:
       errors.append("Empty Client.server_urls")
 
-    for url in location:
-      if not url.startswith("http"):
-        errors.append("Bad Client.server_urls specified %s" % url)
-
+    errors.extend(f"Bad Client.server_urls specified {url}" for url in location
+                  if not url.startswith("http"))
     certificate = config_obj.GetRaw(
         "CA.certificate", default=None, context=context)
     if certificate is None or not certificate.startswith("-----BEGIN CERTIF"):
@@ -252,21 +249,18 @@ def ValidateEndConfig(config_obj, errors_fatal=True, context=None):
   if key_data is None:
     errors.append("Missing Client.executable_signing_public_key.")
   elif not key_data.startswith("-----BEGIN PUBLIC"):
-    errors.append("Invalid Client.executable_signing_public_key: %s" % key_data)
+    errors.append(f"Invalid Client.executable_signing_public_key: {key_data}")
   else:
     rdf_crypto.RSAPublicKey.FromHumanReadable(key_data)
 
-  for bad_opt in ["Client.private_key"]:
-    if config_obj.Get(bad_opt, context=context, default=""):
-      errors.append("Client cert in conf, this should be empty at deployment"
-                    " %s" % bad_opt)
-
-  if errors_fatal and errors:
-    for error in errors:
-      logging.error("Build Config Error: %s", error)
-    raise RuntimeError("Bad configuration generated. Terminating.")
-  else:
+  errors.extend("Client cert in conf, this should be empty at deployment"
+                " %s" % bad_opt for bad_opt in ["Client.private_key"]
+                if config_obj.Get(bad_opt, context=context, default=""))
+  if not errors_fatal or not errors:
     return errors
+  for error in errors:
+    logging.error("Build Config Error: %s", error)
+  raise RuntimeError("Bad configuration generated. Terminating.")
 
 
 # Config options that have to make it to a deployable binary.
@@ -319,9 +313,8 @@ def GetClientConfig(context, validate=True, deploy_timestamp=True):
     if validate:
       ValidateEndConfig(new_config, context=context)
 
-    private_validator = config.CONFIG.Get(
-        "ClientBuilder.private_config_validator_class", context=context)
-    if private_validator:
+    if private_validator := config.CONFIG.Get(
+        "ClientBuilder.private_config_validator_class", context=context):
       try:
         validator = config_validator_base.PrivateConfigValidator.classes[
             private_validator]()

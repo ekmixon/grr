@@ -46,7 +46,7 @@ class Sdist(sdist):
 
 # TODO: Clean up str() call after Python 2 support is
 # dropped ('data_files' elements have to be bytes in Python 2).
-data_files = [str("version.ini")]
+data_files = ["version.ini"]
 
 setup_args = dict(
     name="grr-response-client-builder",
@@ -58,8 +58,7 @@ setup_args = dict(
     url="https://github.com/google/grr",
     entry_points={
         "console_scripts": [
-            "grr_client_build = %s" %
-            ("grr_response_client_builder.distro_entry:ClientBuild"),
+            'grr_client_build = grr_response_client_builder.distro_entry:ClientBuild'
         ]
     },
     cmdclass={"sdist": Sdist},
@@ -68,13 +67,12 @@ setup_args = dict(
     python_requires=">=3.6",
     install_requires=[
         "distro==1.5.0",
-        "grr-response-client==%s" % VERSION.get("Version", "packagedepends"),
-        "grr-response-core==%s" % VERSION.get("Version", "packagedepends"),
+        f'grr-response-client=={VERSION.get("Version", "packagedepends")}',
+        f'grr-response-core=={VERSION.get("Version", "packagedepends")}',
         "PyInstaller==3.6",
         "fleetspeak-client-bin==0.1.7.3",
     ],
-
-    # Data files used by GRR. Access these via the config_lib "resource" filter.
-    data_files=data_files)
+    data_files=data_files,
+)
 
 setup(**setup_args)

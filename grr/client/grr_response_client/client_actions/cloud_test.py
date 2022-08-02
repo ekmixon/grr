@@ -96,7 +96,7 @@ class GetCloudVMMetadataTest(client_test_lib.EmptyActionTest):
       if response.label == "Google-project-id":
         self.assertEqual(response.text, project.text)
       else:
-        self.fail("Bad response.label: %s" % response.label)
+        self.fail(f"Bad response.label: {response.label}")
 
   def testMultipleBIOSMultipleURLs(self):
     ami = mock.Mock(text="ami-12345678")
@@ -132,7 +132,7 @@ class GetCloudVMMetadataTest(client_test_lib.EmptyActionTest):
       if response.label == "amazon-ami":
         self.assertEqual(response.text, ami.text)
       else:
-        self.fail("Bad response.label: %s" % response.label)
+        self.fail(f"Bad response.label: {response.label}")
 
   def testMatchingBIOSMultipleURLs(self):
     zone = mock.Mock(text="projects/123456789733/zones/us-central1-a")
@@ -155,11 +155,11 @@ class GetCloudVMMetadataTest(client_test_lib.EmptyActionTest):
     ])
 
     with mock.patch.multiple(
-        cloud.GetCloudVMMetadata,
-        LINUX_BIOS_VERSION_COMMAND=["/bin/echo", "Google"],
-        WINDOWS_SERVICES_COMMAND=[
-            "cmd.exe", "/C", "echo SERVICE_NAME: GCEAgent"
-        ]):
+          cloud.GetCloudVMMetadata,
+          LINUX_BIOS_VERSION_COMMAND=["/bin/echo", "Google"],
+          WINDOWS_SERVICES_COMMAND=[
+              "cmd.exe", "/C", "echo SERVICE_NAME: GCEAgent"
+          ]):
       with mock.patch.object(requests, "request") as mock_requests:
         mock_requests.side_effect = [zone, project]
         results = self.RunAction(cloud.GetCloudVMMetadata, arg=arg)
@@ -173,7 +173,7 @@ class GetCloudVMMetadataTest(client_test_lib.EmptyActionTest):
         elif response.label == "project-id":
           self.assertEqual(response.text, project.text)
         else:
-          self.fail("Bad response.label: %s" % response.label)
+          self.fail(f"Bad response.label: {response.label}")
 
 
 def main(argv):

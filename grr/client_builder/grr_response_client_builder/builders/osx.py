@@ -34,7 +34,7 @@ class DarwinClientBuilder(build.ClientBuilder):
     self.client_name = config.CONFIG.Get("Client.name", context=self.context)
     self.pkg_org = config.CONFIG.Get(
         "ClientBuilder.package_maker_organization", context=self.context)
-    self.pkg_name = "%s-%s.pkg" % (self.client_name, self.version)
+    self.pkg_name = f"{self.client_name}-{self.version}.pkg"
     self.build_root = config.CONFIG.Get(
         "ClientBuilder.build_root_dir", context=self.context)
     self.plist_name = config.CONFIG.Get(
@@ -170,13 +170,12 @@ class DarwinClientBuilder(build.ClientBuilder):
             "binaries signing...")
       return
 
-    print("Signing binaries with keychain: %s" % keychain_file)
+    print(f"Signing binaries with keychain: {keychain_file}")
 
     with utils.TempDirectory() as temp_dir:
       # codesign needs the directory name to adhere to a particular
       # naming format.
-      bundle_dir = os.path.join(temp_dir,
-                                "%s_%s" % (self.client_name, self.version))
+      bundle_dir = os.path.join(temp_dir, f"{self.client_name}_{self.version}")
       shutil.move(self.target_binary_dir, bundle_dir)
       temp_binary_path = os.path.join(
           bundle_dir,
@@ -213,7 +212,7 @@ class DarwinClientBuilder(build.ClientBuilder):
               ["Client Context"] + self.context, validate=False))
 
   def _RunCmd(self, command, cwd=None):
-    print("Running: %s" % " ".join(command))
+    print(f'Running: {" ".join(command)}')
     subprocess.check_call(command, cwd=cwd)
 
   def _Set755Permissions(self):
@@ -223,11 +222,17 @@ class DarwinClientBuilder(build.ClientBuilder):
     self._RunCmd(command)
 
   def _RunPkgBuild(self):
-    pkg_id = "%s.%s" % (self.pkg_org, self.client_name)
+    pkg_id = f"{self.pkg_org}.{self.client_name}"
     command = [
         "pkgbuild",
-        "--root=%s" % self.pkg_root, "--identifier", pkg_id, "--scripts",
-        self.script_dir, "--version", self.version, self.pkgbuild_out_binary
+        f"--root={self.pkg_root}",
+        "--identifier",
+        pkg_id,
+        "--scripts",
+        self.script_dir,
+        "--version",
+        self.version,
+        self.pkgbuild_out_binary,
     ]
     self._RunCmd(command)
 

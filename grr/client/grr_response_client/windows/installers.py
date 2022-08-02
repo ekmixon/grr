@@ -99,10 +99,11 @@ def _StopService(service_name, service_binary_name=None):
   # Taskkill will fail on systems predating Windows XP, this is a best
   # effort fallback solution.
   output = subprocess.check_output(
-      ["taskkill", "/im", "%s*" % service_binary_name, "/f"],
+      ["taskkill", "/im", f"{service_binary_name}*", "/f"],
       shell=True,
       stdin=subprocess.PIPE,
-      stderr=subprocess.PIPE)
+      stderr=subprocess.PIPE,
+  )
 
   logging.debug("%s", output)
 
@@ -221,16 +222,15 @@ def _CopyToSystemDir():
         break
       except OSError as e:
         attempts += 1
-        if e.errno == errno.EACCES and attempts < 10:
-          # The currently installed GRR process may stick around for a few
-          # seconds after the service is terminated (keeping the contents of
-          # the installation directory locked).
-          logging.warning(
-              "Encountered permission-denied error while trying to empty out "
-              "'%s'. Retrying...", install_path)
-          time.sleep(3)
-        else:
+        if e.errno != errno.EACCES or attempts >= 10:
           raise e
+        # The currently installed GRR process may stick around for a few
+        # seconds after the service is terminated (keeping the contents of
+        # the installation directory locked).
+        logging.warning(
+            "Encountered permission-denied error while trying to empty out "
+            "'%s'. Retrying...", install_path)
+        time.sleep(3)
   os.makedirs(install_path)
 
   # Recursively copy the temp directory to the installation directory.
@@ -300,12 +300,11 @@ def _DeleteLegacyConfigOptions(registry_key_uri):
     regkey = winreg.OpenKeyEx(key_spec.winreg_hive, key_spec.path, 0,
                               winreg.KEY_ALL_ACCESS)
   except OSError as e:
-    if e.errno == errno.ENOENT:
-      logging.info("Skipping legacy config purge for non-existent key: %s.",
-                   registry_key_uri)
-      return
-    else:
+    if e.errno != errno.ENOENT:
       raise
+    logging.info("Skipping legacy config purge for non-existent key: %s.",
+                 registry_key_uri)
+    return
   for option in _LEGACY_OPTIONS:
     try:
       winreg.DeleteValue(regkey, option)

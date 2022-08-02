@@ -96,8 +96,7 @@ class RecursiveComponent(PathComponent):
 
       yield itempath
 
-      for childpath in self._Recurse(itempath, depth):
-        yield childpath
+      yield from self._Recurse(itempath, depth)
 
   def _Recurse(self, path, depth):
     """Recurses to the given path if necessary up to the given depth."""
@@ -130,10 +129,9 @@ class RecursiveComponent(PathComponent):
       except IOError:
         return  # Skip inaccessible Registry parts (e.g. HKLM\SAM\SAM) silently.
     else:
-      raise AssertionError("Invalid pathtype {}".format(self.opts.pathtype))
+      raise AssertionError(f"Invalid pathtype {self.opts.pathtype}")
 
-    for childpath in self._Generate(path, depth + 1):
-      yield childpath
+    yield from self._Generate(path, depth + 1)
 
   def __repr__(self):
     return "RecursiveComponent(max_depth={}, opts={!r})".format(
@@ -179,10 +177,10 @@ class GlobComponent(PathComponent):
     # drop Python2 support for good, we can switch to pathlib instead.
 
     lower_glob = self._glob.lower()
-    for fname in os.listdir(dirpath):
-      if fname.lower() == lower_glob:
-        return fname
-    return None
+    return next(
+        (fname for fname in os.listdir(dirpath) if fname.lower() == lower_glob),
+        None,
+    )
 
   def _GenerateLiteralMatch(self, dirpath: Text) -> Optional[Text]:
     """Generates a literal match."""
@@ -285,7 +283,7 @@ def ParsePathItem(item, opts=None):
     return GlobComponent(item, opts)
 
   start, end = recursion.span()
-  if not (start == 0 and end == len(item)):
+  if start != 0 or end != len(item):
     raise ValueError("malformed recursive component")
 
   if recursion.group("max_depth"):
@@ -344,8 +342,7 @@ def ExpandPath(path: Text,
   precondition.AssertType(path, Text)
 
   for grouped_path in ExpandGroups(path):
-    for globbed_path in ExpandGlobs(grouped_path, opts, heartbeat_cb):
-      yield globbed_path
+    yield from ExpandGlobs(grouped_path, opts, heartbeat_cb)
 
 
 def ExpandGroups(path):
@@ -366,8 +363,7 @@ def ExpandGroups(path):
   offset = 0
 
   for match in PATH_GROUP_REGEX.finditer(path):
-    chunks.append([path[offset:match.start()]])
-    chunks.append(match.group("alts").split(","))
+    chunks.extend(([path[offset:match.start()]], match.group("alts").split(",")))
     offset = match.end()
 
   chunks.append([path[offset:]])
@@ -433,9 +429,8 @@ def _ExpandComponents(basepath, components, index=0, heartbeat_cb=_NoOp):
     yield basepath
     return
   for childpath in components[index].Generate(basepath):
-    for path in _ExpandComponents(childpath, components, index + 1,
-                                  heartbeat_cb):
-      yield path
+    yield from _ExpandComponents(childpath, components, index + 1,
+                                 heartbeat_cb)
 
 
 def _ListDir(dirpath, pathtype):
@@ -462,13 +457,9 @@ def _ListDir(dirpath, pathtype):
   childpaths = []
   try:
     with vfs.VFSOpen(pathspec) as filedesc:
-      for path in filedesc.ListNames():
-        # For Windows registry, ignore the empty string which corresponds to the
-        # default value in the current key. Otherwise, globbing a key will yield
-        # the key itself, because joining the name of the default value u"" with
-        # a key name yields the key name again.
-        if pathtype != rdf_paths.PathSpec.PathType.REGISTRY or path:
-          childpaths.append(path)
+      childpaths.extend(
+          path for path in filedesc.ListNames()
+          if pathtype != rdf_paths.PathSpec.PathType.REGISTRY or path)
   except IOError:
     pass
 
@@ -487,7 +478,7 @@ def _GetMountpoints(only_physical=True):
     A set of mountpoints.
   """
   partitions = psutil.disk_partitions(all=not only_physical)
-  return set(partition.mountpoint for partition in partitions)
+  return {partition.mountpoint for partition in partitions}
 
 
 _XDEV_ALL_ALLOWED = object()
@@ -526,4 +517,4 @@ def _GetAllowedDevices(xdev, path):
     return res
 
   else:
-    raise ValueError("Incorrect `xdev` value: %s" % xdev)
+    raise ValueError(f"Incorrect `xdev` value: {xdev}")

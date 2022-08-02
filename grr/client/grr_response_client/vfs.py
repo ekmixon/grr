@@ -63,9 +63,8 @@ def Init():
     handler = rdf_paths.PathSpec.PathType.enum_dict.get(handler_string)
     if handler is None:
       raise ValueError(
-          "VFSHandler {} could not be registered, because it was not found in"
-          " PathSpec.PathType {}".format(handler_string,
-                                         rdf_paths.PathSpec.PathType.enum_dict))
+          f"VFSHandler {handler_string} could not be registered, because it was not found in PathSpec.PathType {rdf_paths.PathSpec.PathType.enum_dict}"
+      )
 
     # We need some translation here, TSK needs an OS virtual root base. For
     # every other handler we can just keep the type the same.

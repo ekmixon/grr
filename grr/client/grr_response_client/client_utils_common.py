@@ -66,24 +66,23 @@ def Execute(cmd,
                  " ".join(args))
     return (b"", b"Execution disallowed by allowlist.", -1, -1)
 
-  if daemon:
-    pid = os.fork()
-    if pid == 0:
-      # This is the child, it will run the daemon process. We call os.setsid
-      # here to become the session leader of this new session and the process
-      # group leader of the new process group so we don't get killed when the
-      # main process exits.
-      try:
-        os.setsid()
-      except OSError:
-        # This only works if the process is running as root.
-        pass
-      _Execute(
-          cmd, args, time_limit, use_client_context=use_client_context, cwd=cwd)
-      os._exit(0)  # pylint: disable=protected-access
-  else:
+  if not daemon:
     return _Execute(
         cmd, args, time_limit, use_client_context=use_client_context, cwd=cwd)
+  pid = os.fork()
+  if pid == 0:
+    # This is the child, it will run the daemon process. We call os.setsid
+    # here to become the session leader of this new session and the process
+    # group leader of the new process group so we don't get killed when the
+    # main process exits.
+    try:
+      os.setsid()
+    except OSError:
+      # This only works if the process is running as root.
+      pass
+    _Execute(
+        cmd, args, time_limit, use_client_context=use_client_context, cwd=cwd)
+    os._exit(0)  # pylint: disable=protected-access
 
 
 def _Execute(cmd, args, time_limit=-1, use_client_context=False, cwd=None):
@@ -208,10 +207,7 @@ def IsExecutionAllowed(cmd, args):
       return True
 
   # Check if allowlist is overridden in the local GRR installation.
-  if binary_whitelist.IsExecutionWhitelisted(cmd, args):
-    return True
-
-  return False
+  return bool(binary_whitelist.IsExecutionWhitelisted(cmd, args))
 
 
 class MultiHasher(object):

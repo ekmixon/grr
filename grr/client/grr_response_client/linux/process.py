@@ -25,8 +25,8 @@ def Errcheck(ret, func, args):
   del args
   if ret == -1:
     raise OSError(
-        "Error in %s: %s" % (func.__name__,
-                             os.strerror(ctypes.get_errno() or errno.EPERM)))
+        f"Error in {func.__name__}: {os.strerror((ctypes.get_errno() or errno.EPERM))}"
+    )
   return ret
 
 
@@ -70,7 +70,7 @@ class Process(object):
     self.mem_file = None
 
   def Open(self):
-    path = "/proc/{}/mem".format(self.pid)
+    path = f"/proc/{self.pid}/mem"
     cpath = ctypes.create_string_buffer(path.encode("utf-8"))
     try:
       self.mem_file = open64(ctypes.byref(cpath), os.O_RDONLY)
@@ -96,7 +96,7 @@ class Process(object):
               skip_readonly_regions=False):
     """Returns an iterator over the readable regions for this process."""
     try:
-      maps_file = open("/proc/" + str(self.pid) + "/maps", "r")
+      maps_file = open(f"/proc/{str(self.pid)}/maps", "r")
     except OSError as e:
       raise process_error.ProcessError(e)
 
@@ -110,25 +110,23 @@ class Process(object):
         region_protec = m.group(3)
         inode = int(m.group(6))
 
-        is_writable = "w" in region_protec
-        is_executable = "x" in region_protec
-
         if "r" in region_protec:
           if skip_mapped_files and inode != 0:
             continue
           if skip_shared_regions and "s" in region_protec:
             continue
+          is_executable = "x" in region_protec
+
           if skip_executable_regions and is_executable:
             continue
-          if skip_readonly_regions and not is_writable:
-            continue
-
-          yield rdf_memory.ProcessMemoryRegion(
-              start=start,
-              size=end - start,
-              is_readable=True,
-              is_writable=is_writable,
-              is_executable=is_executable)
+          is_writable = "w" in region_protec
+          if not skip_readonly_regions or is_writable:
+            yield rdf_memory.ProcessMemoryRegion(
+                start=start,
+                size=end - start,
+                is_readable=True,
+                is_writable=is_writable,
+                is_executable=is_executable)
 
   def ReadBytes(self, address, num_bytes):
     lseek64(self.mem_file, address, os.SEEK_SET)

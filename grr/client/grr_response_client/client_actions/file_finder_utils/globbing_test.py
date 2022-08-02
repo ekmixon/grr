@@ -334,9 +334,7 @@ class GlobComponentTest(absltest.TestCase):
 
     # `*` and `?` are disallowed in names of files on Windows.
     if platform.system() != "Windows":
-      filepaths.append("*")
-      filepaths.append("?")
-
+      filepaths.extend(("*", "?"))
     with DirHierarchy(filepaths) as hierarchy:
       component = globbing.GlobComponent("[][-]")
 

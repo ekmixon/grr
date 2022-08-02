@@ -81,10 +81,7 @@ class Substitution(object):
     else:
       raise TypeError("Unexpected pattern type '{}'".format(type(pattern)))
 
-    if not substs:
-      return pattern
-    else:
-      return regex.sub(Replacement, pattern)
+    return regex.sub(Replacement, pattern) if substs else pattern
 
 
 class Interpolator(Generic[AnyStr]):
@@ -121,14 +118,14 @@ class Interpolator(Generic[AnyStr]):
       scope_regex = re.compile(self._SCOPE_PLACEHOLDER_PATTERN)
       decoder = lambda _: _
     else:
-      raise TypeError("Unexpected pattern type '{}'".format(type(pattern)))
+      raise TypeError(f"Unexpected pattern type '{type(pattern)}'")
 
     self._vars = set()
     for matches in var_regex.finditer(pattern):
       var = matches.group("var")
       self._vars.add(decoder(var))
 
-    self._scopes = dict()
+    self._scopes = {}
     for matches in scope_regex.finditer(pattern):
       scope = matches.group("scope")
       var = matches.group("var")

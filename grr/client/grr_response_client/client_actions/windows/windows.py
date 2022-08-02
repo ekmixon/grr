@@ -52,7 +52,7 @@ def UnicodeFromCodePage(string: bytes) -> Text:
   codepage = ctypes.windll.kernel32.GetOEMCP()
 
   try:
-    return string.decode("cp%s" % codepage)
+    return string.decode(f"cp{codepage}")
   except UnicodeError:
     try:
       return string.decode("utf16", "ignore")
@@ -88,11 +88,10 @@ def EnumerateInterfacesFromClient(args):
 
   pythoncom.CoInitialize()
   for interface in (wmi.WMI().Win32_NetworkAdapterConfiguration() or []):
-    addresses = []
-    for ip_address in interface.IPAddress or []:
-      addresses.append(
-          rdf_client_network.NetworkAddress(human_readable_address=ip_address))
-
+    addresses = [
+        rdf_client_network.NetworkAddress(human_readable_address=ip_address)
+        for ip_address in interface.IPAddress or []
+    ]
     response = rdf_client_network.Interface(ifname=interface.Description)
     if interface.MACAddress:
       response.mac_address = binascii.unhexlify(
@@ -133,10 +132,7 @@ def EnumerateFilesystemsFromClient(args):
       label = UnicodeFromCodePage(label)
 
     yield rdf_client_fs.Filesystem(
-        device=volume,
-        mount_point="/%s:/" % drive[0],
-        type=fs_type,
-        label=label)
+        device=volume, mount_point=f"/{drive[0]}:/", type=fs_type, label=label)
 
 
 class EnumerateFilesystems(actions.ActionPlugin):
@@ -193,8 +189,7 @@ def WmiQueryFromClient(args):
   if not query.upper().startswith("SELECT "):
     raise RuntimeError("Only SELECT WMI queries allowed.")
 
-  for response_dict in RunWMIQuery(query, baseobj=base_object):
-    yield response_dict
+  yield from RunWMIQuery(query, baseobj=base_object)
 
 
 class WmiQuery(actions.ActionPlugin):

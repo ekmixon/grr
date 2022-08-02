@@ -31,7 +31,7 @@ def icon(stat_entry: jobs_pb2.StatEntry) -> Text:
 def name(stat_entry: jobs_pb2.StatEntry) -> Text:
   filename = os.path.basename(os.path.normpath(stat_entry.pathspec.path))
   if _is_symlink(stat_entry):
-    return '{} -> {}'.format(filename, stat_entry.symlink)
+    return f'{filename} -> {stat_entry.symlink}'
   return filename
 
 
@@ -59,9 +59,7 @@ def mode_from_bitmask(st_mode: int) -> Text:
   }
   file_type = file_types[stat.S_IFMT(st_mode)]
 
-  permissions = ''
-
-  permissions += 'r' if st_mode & stat.S_IRUSR else '-'
+  permissions = '' + ('r' if st_mode & stat.S_IRUSR else '-')
   permissions += 'w' if st_mode & stat.S_IWUSR else '-'
   if st_mode & stat.S_ISUID:
     permissions += 's' if st_mode & stat.S_IXUSR else 'S'

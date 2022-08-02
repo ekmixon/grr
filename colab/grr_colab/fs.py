@@ -117,9 +117,9 @@ class FileSystem(object):
 
     cond = args.conditions.add()
     cond.condition_type = \
-      flows_pb2.FileFinderCondition.Type.CONTENTS_REGEX_MATCH
+        flows_pb2.FileFinderCondition.Type.CONTENTS_REGEX_MATCH
     cond.contents_regex_match.mode = \
-      flows_pb2.FileFinderContentsRegexMatchCondition.ALL_HITS
+        flows_pb2.FileFinderContentsRegexMatchCondition.ALL_HITS
     cond.contents_regex_match.regex = pattern
 
     args.action.action_type = flows_pb2.FileFinderAction.Action.STAT
@@ -151,9 +151,9 @@ class FileSystem(object):
 
     cond = args.conditions.add()
     cond.condition_type = \
-      flows_pb2.FileFinderCondition.Type.CONTENTS_LITERAL_MATCH
+        flows_pb2.FileFinderCondition.Type.CONTENTS_LITERAL_MATCH
     cond.contents_literal_match.mode = \
-      flows_pb2.FileFinderContentsLiteralMatchCondition.Mode.ALL_HITS
+        flows_pb2.FileFinderContentsLiteralMatchCondition.Mode.ALL_HITS
     cond.contents_literal_match.literal = literal
 
     args.action.action_type = flows_pb2.FileFinderAction.Action.STAT

@@ -65,8 +65,7 @@ class ItemsIterator(Iterator[_T]):
     self.total_count = total_count
 
   def __iter__(self) -> Iterator[_T]:
-    for i in self.items:
-      yield i
+    yield from self.items
 
   def __next__(self) -> _T:
     return next(self.items)
@@ -94,8 +93,7 @@ class BinaryChunkIterator(object):
     self.chunks = chunks  # type: Iterator[bytes]
 
   def __iter__(self) -> Iterator[bytes]:
-    for c in self.chunks:
-      yield c
+    yield from self.chunks
 
   def __next__(self) -> bytes:
     return next(self.chunks)
@@ -126,8 +124,7 @@ def Poll(
   started = time.time()
   while True:
     obj = generator()
-    check_result = condition(obj)
-    if check_result:
+    if check_result := condition(obj):
       return obj
 
     if timeout and (time.time() - started) > timeout:
@@ -155,7 +152,7 @@ def UrnStringToHuntId(urn: str) -> str:
 
   components = urn.split("/")
   if len(components) != 2 or components[0] != "hunts":
-    raise ValueError("Invalid hunt URN: %s" % urn)
+    raise ValueError(f"Invalid hunt URN: {urn}")
 
   return components[-1]
 
@@ -174,8 +171,8 @@ def TypeUrlToMessage(type_url: str) -> message.Message:
   """Returns a message instance corresponding to a given type URL."""
 
   if not type_url.startswith(TYPE_URL_PREFIX):
-    raise ValueError("Type URL has to start with a prefix %s: %s" %
-                     (TYPE_URL_PREFIX, type_url))
+    raise ValueError(
+        f"Type URL has to start with a prefix {TYPE_URL_PREFIX}: {type_url}")
 
   full_name = type_url[len(TYPE_URL_PREFIX):]
 

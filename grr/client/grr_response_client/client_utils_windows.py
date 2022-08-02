@@ -51,9 +51,8 @@ def CanonicalPathToLocalPath(path):
   # Account for raw devices
   path = path.replace("/\\", "\\")
   path = path.replace("/", "\\")
-  m = re.match(r"\\([a-zA-Z]):(.*)$", path)
-  if m:
-    path = "%s:\\%s" % (m.group(1), m.group(2).lstrip("\\"))
+  if m := re.match(r"\\([a-zA-Z]):(.*)$", path):
+    path = "%s:\\%s" % (m[1], m[2].lstrip("\\"))
 
   return path
 
@@ -99,7 +98,7 @@ def WinChmod(filename, acl_list, user=None):
     user = win32api.GetUserName()
 
   if not os.path.exists(filename):
-    raise RuntimeError("filename %s does not exist" % filename)
+    raise RuntimeError(f"filename {filename} does not exist")
 
   acl_bitmask = 0
   for acl in acl_list:
@@ -148,7 +147,7 @@ def FindProxies():
   """
 
   proxies = []
-  for i in range(0, 100):
+  for i in range(100):
     try:
       sid = winreg.EnumKey(winreg.HKEY_USERS, i)
     except OSError:
@@ -161,9 +160,8 @@ def FindProxies():
 
       internet_settings = winreg.OpenKey(winreg.HKEY_USERS, subkey)
 
-      proxy_enable = winreg.QueryValueEx(internet_settings, "ProxyEnable")[0]
-
-      if proxy_enable:
+      if proxy_enable := winreg.QueryValueEx(internet_settings,
+                                             "ProxyEnable")[0]:
         # Returned as Unicode but problems if not converted to ASCII
         proxy_server = str(
             winreg.QueryValueEx(internet_settings, "ProxyServer")[0])
@@ -174,15 +172,13 @@ def FindProxies():
             # See if address has a type:// prefix
 
             if not re.match("^([^/:]+)://", address):
-              address = "%s://%s" % (protocol, address)
+              address = f"{protocol}://{address}"
 
             proxies.append(address)
+        elif proxy_server.startswith("http:"):
+          proxies.append(proxy_server)
         else:
-          # Use one setting for all protocols
-          if proxy_server[:5] == "http:":
-            proxies.append(proxy_server)
-          else:
-            proxies.append("http://%s" % proxy_server)
+          proxies.append(f"http://{proxy_server}")
 
       internet_settings.Close()
 
@@ -218,12 +214,12 @@ def GetRawDevice(path):
     mount_point = win32file.GetVolumePathName(path)
   except pywintypes.error as details:
     logging.info("path not found. %s", details)
-    raise IOError("No mountpoint for path: %s" % path)
+    raise IOError(f"No mountpoint for path: {path}")
 
   if not path.startswith(mount_point):
     stripped_mp = mount_point.rstrip("\\")
     if not path.startswith(stripped_mp):
-      raise IOError("path %s is not mounted under %s" % (path, mount_point))
+      raise IOError(f"path {path} is not mounted under {mount_point}")
 
   corrected_path = LocalPathToCanonicalPath(path[len(mount_point):])
   corrected_path = utils.NormalizePath(corrected_path)
@@ -306,16 +302,7 @@ class Kernel32(object):
 
   def __init__(self):
     if not Kernel32._kernel32:
-      # TODO(hanuszczak): We use binary literal here because of apparent issues
-      # with passing a unicode literal in Python 2.7.13 [1, 2] and Python 2.7.16
-      # (ends up in "Failed to load dynlib/dll" error).
-      #
-      # This should be reverted to unicode literal once support for 2.7
-      # is officially dropped.
-      #
-      # [1]: https://bugs.python.org/issue29082
-      # [2]: https://bugs.python.org/issue29294
-      if sys.version_info[0:2] == (2, 7):
+      if sys.version_info[:2] == (2, 7):
         Kernel32._kernel32 = ctypes.windll.LoadLibrary(b"Kernel32.dll")
       else:
         Kernel32._kernel32 = ctypes.windll.LoadLibrary("Kernel32.dll")

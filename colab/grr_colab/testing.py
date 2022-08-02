@@ -48,7 +48,7 @@ class ColabTestMixin(object):
     cls._server_thread = wsgiapp_testlib.ServerThread(port, name="ServerThread")
     cls._server_thread.StartAndWaitUntilServing()
 
-    _api._API = api.InitHttp(api_endpoint="http://localhost:{}".format(port))  # pylint: disable=protected-access
+    _api._API = api.InitHttp(api_endpoint=f"http://localhost:{port}")
 
   @classmethod
   def tearDownClass(cls) -> None:

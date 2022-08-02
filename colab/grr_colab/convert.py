@@ -28,10 +28,8 @@ def from_sequence(seq: Sequence[Any]) -> pd.DataFrame:
     Pandas dataframe representing given sequence of objects.
   """
   dframes = [from_object(obj) for obj in seq]
-  if not dframes:
-    return pd.DataFrame()
-
-  return pd.concat(dframes, ignore_index=True, sort=False)
+  return (pd.concat(dframes, ignore_index=True, sort=False)
+          if dframes else pd.DataFrame())
 
 
 def from_object(obj: Any) -> pd.DataFrame:
@@ -65,7 +63,7 @@ def from_message(msg: message.Message,
   data = {}
   for desc, value in msg.ListFields():
     if isinstance(value, message.Message):
-      data.update(from_message(value, components + [desc.name]))
+      data |= from_message(value, components + [desc.name])
     else:
       data.update(_get_pretty_value(value, desc, components))
 
@@ -115,16 +113,16 @@ def _get_pretty_value(value: Any, desc: descriptor.FieldDescriptor,
 
   elif desc.type == desc.TYPE_BYTES:
     data[column_name] = [value]
-    data[column_name + '.pretty'] = [repr(value)]
+    data[f'{column_name}.pretty'] = [repr(value)]
 
   elif desc.GetOptions().Extensions[sem_type].type == 'RDFDatetime':
     data[column_name] = [value]
     pretty_value = datetime.datetime.utcfromtimestamp(value / (10**6))
-    data[column_name + '.pretty'] = [pretty_value]
+    data[f'{column_name}.pretty'] = [pretty_value]
 
   elif desc.GetOptions().Extensions[sem_type].type == 'StatMode':
     data[column_name] = [value]
-    data[column_name + '.pretty'] = [stat.mode_from_bitmask(value)]
+    data[f'{column_name}.pretty'] = [stat.mode_from_bitmask(value)]
 
   else:
     data[column_name] = [value]
@@ -175,7 +173,7 @@ def add_pretty_column(df: pd.DataFrame, col_name: Text,
   if col_name not in df.columns:
     return df
 
-  pretty_col_name = '{}.pretty'.format(col_name)
+  pretty_col_name = f'{col_name}.pretty'
 
   if pretty_col_name in df.columns:
     df[pretty_col_name] = values

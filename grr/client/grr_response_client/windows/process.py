@@ -168,11 +168,11 @@ class Process(object):
 
   def VirtualQueryEx(self, address):
     mbi = MEMORY_BASIC_INFORMATION()
-    res = VirtualQueryEx(self.h_process, address, ctypes.byref(mbi),
-                         ctypes.sizeof(mbi))
-    if not res:
+    if res := VirtualQueryEx(self.h_process, address, ctypes.byref(mbi),
+                             ctypes.sizeof(mbi)):
+      return mbi
+    else:
       raise process_error.ProcessError("Error VirtualQueryEx: 0x%08X" % address)
-    return mbi
 
   def Regions(self,
               skip_special_regions=False,
@@ -181,9 +181,7 @@ class Process(object):
     """Returns an iterator over the readable regions for this process."""
     offset = self.min_addr
 
-    while True:
-      if offset >= self.max_addr:
-        break
+    while not offset >= self.max_addr:
       mbi = self.VirtualQueryEx(offset)
       offset = mbi.BaseAddress
       chunk = mbi.RegionSize

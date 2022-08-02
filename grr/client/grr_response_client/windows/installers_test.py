@@ -62,7 +62,7 @@ class InstallerTest(absltest.TestCase):
     winreg.SetValueEx(key, "foo", 0, winreg.REG_SZ, "foo-value")
     winreg.SetValueEx(key, "bar", 0, winreg.REG_SZ, "bar-value")
     installers._DeleteLegacyConfigOptions(
-        "reg://HKEY_LOCAL_MACHINE/{}".format(_TEST_KEY_PATH))
+        f"reg://HKEY_LOCAL_MACHINE/{_TEST_KEY_PATH}")
     remaining_values = _GetAllRegistryKeyValues(key)
     self.assertDictEqual(remaining_values, {"foo": "foo-value"})
 

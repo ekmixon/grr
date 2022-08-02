@@ -41,12 +41,7 @@ class ErrorLibNotFound(Error):
 
 def FilterFnTable(fn_table, symbol):
   """Remove a specific symbol from a fn_table."""
-  new_table = list()
-  for entry in fn_table:
-    # symbol[0] is a str with the symbol name
-    if entry[0] != symbol:
-      new_table.append(entry)
-  return new_table
+  return [entry for entry in fn_table if entry[0] != symbol]
 
 
 def LoadLibrary(libname: str) -> ctypes.CDLL:
@@ -67,7 +62,7 @@ def LoadLibrary(libname: str) -> ctypes.CDLL:
     except OSError:
       pass
 
-  raise ErrorLibNotFound('Library {} not found'.format(libname))
+  raise ErrorLibNotFound(f'Library {libname} not found')
 
 
 def _SetCTypesForLibrary(libname, fn_table):
@@ -151,9 +146,8 @@ class Foundation(object):
     if not isinstance(num, int):
       raise TypeError('CFNumber can only be created from int')
     c_num = ctypes.c_int64(num)
-    cf_number = self.dll.CFNumberCreate(CF_DEFAULT_ALLOCATOR, INT64,
-                                        ctypes.byref(c_num))
-    return cf_number
+    return self.dll.CFNumberCreate(CF_DEFAULT_ALLOCATOR, INT64,
+                                   ctypes.byref(c_num))
 
   def CFNumToInt32(self, num):
     tmp = ctypes.c_int32(0)
@@ -277,10 +271,7 @@ class CFBoolean(CFType):
   @property
   def value(self):
     bool_const = self.dll.CFBooleanGetValue(self)
-    if bool_const == 0:
-      return False
-    else:
-      return True
+    return bool_const != 0
 
   def __bool__(self):
     return self.value

@@ -84,8 +84,9 @@ class RegistryFileTest(vfs_test_lib.VfsTestCase, absltest.TestCase):
   def testFileReadLongUnicodeValue(self):
     fd = vfs.VFSOpen(
         rdf_paths.PathSpec(
-            path=r"/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{}".format(_LONG_KEY),
-            pathtype="REGISTRY"))
+            path=f"/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{_LONG_KEY}",
+            pathtype="REGISTRY",
+        ))
     self.assertEqual(fd.Read(-1).decode("utf-8"), _LONG_STRING_VALUE)
 
   def testReadMinDword(self):

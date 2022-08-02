@@ -108,8 +108,7 @@ class Communicator(metaclass=abc.ABCMeta):
        RuntimeError: If we do not support this api version.
     """
     if api_version not in [3]:
-      raise RuntimeError(
-          "Unsupported api version: %s, expected 3." % api_version)
+      raise RuntimeError(f"Unsupported api version: {api_version}, expected 3.")
     cipher = self._GetServerCipher()
 
     # Make a nonce for this transaction
@@ -164,7 +163,7 @@ class Communicator(metaclass=abc.ABCMeta):
       return self.DecodeMessages(response_comms)
     except (rdfvalue.DecodeError, type_info.TypeValueError, ValueError,
             AttributeError) as e:
-      raise DecodingError("Error while decrypting messages: %s" % e)
+      raise DecodingError(f"Error while decrypting messages: {e}")
 
   @classmethod
   def DecompressMessageList(cls, packed_message_list):

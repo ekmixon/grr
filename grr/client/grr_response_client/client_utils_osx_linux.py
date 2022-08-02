@@ -83,7 +83,7 @@ def GetExtAttrs(filepath):
       return attr_name.encode("utf-8")
     if isinstance(attr_name, bytes):
       return attr_name
-    raise TypeError("Unexpected type `%s`" % type(attr_name))
+    raise TypeError(f"Unexpected type `{type(attr_name)}`")
 
   for attr_name in attr_names:
     attr_name = EncodeUtf8(attr_name)

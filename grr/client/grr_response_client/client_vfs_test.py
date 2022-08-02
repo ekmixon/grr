@@ -40,7 +40,7 @@ class VFSTest(vfs_test_lib.VfsTestCase, test_lib.GRRBaseTest):
     """Generate a test string."""
     result = b""
     for i in range(1, 1001):
-      result += "{}\n".format(i).encode("ascii")
+      result += f"{i}\n".encode("ascii")
 
     return result
 
@@ -51,7 +51,7 @@ class VFSTest(vfs_test_lib.VfsTestCase, test_lib.GRRBaseTest):
     self.assertEqual(fd.size, len(original_string))
 
     fd.Seek(0)
-    self.assertEqual(fd.Read(100), original_string[0:100])
+    self.assertEqual(fd.Read(100), original_string[:100])
     self.assertEqual(fd.Tell(), 100)
 
     fd.Seek(-10, 1)
@@ -130,8 +130,8 @@ class VFSTest(vfs_test_lib.VfsTestCase, test_lib.GRRBaseTest):
       read_path = fd.pathspec.Basename()
 
       # The exact file now is non deterministic but should be either of the two:
-      if read_path != "numbers.txt" and read_path != "numbers.TXT":
-        raise RuntimeError("read path is %s" % read_path)
+      if read_path not in ["numbers.txt", "numbers.TXT"]:
+        raise RuntimeError(f"read path is {read_path}")
 
       # Ensure that the produced pathspec specified no case folding:
       s = fd.Stat()
@@ -464,7 +464,7 @@ class VFSTest(vfs_test_lib.VfsTestCase, test_lib.GRRBaseTest):
   def testVFSVirtualRoot(self):
 
     # Let's open a file in the virtual root.
-    os_root = "os:%s" % self.base_path
+    os_root = f"os:{self.base_path}"
     with test_lib.ConfigOverrider({"Client.vfs_virtualroots": [os_root]}):
       # We need to reset the vfs._VFS_VIRTUALROOTS too.
       vfs.Init()
@@ -476,7 +476,7 @@ class VFSTest(vfs_test_lib.VfsTestCase, test_lib.GRRBaseTest):
       self.assertEqual(data, b"1\n2\n3\n4\n5\n")
 
     # This should also work with TSK.
-    tsk_root = "tsk:%s" % os.path.join(self.base_path, "test_img.dd")
+    tsk_root = f'tsk:{os.path.join(self.base_path, "test_img.dd")}'
     with test_lib.ConfigOverrider({"Client.vfs_virtualroots": [tsk_root]}):
       vfs.Init()
 
@@ -504,7 +504,7 @@ class VFSTest(vfs_test_lib.VfsTestCase, test_lib.GRRBaseTest):
     try:
       st = os.stat(fname)
     except OSError:
-      self.skipTest("%s not accessible." % fname)
+      self.skipTest(f"{fname} not accessible.")
     if st.st_size != 0:
       self.skipTest("%s doesn't have 0 size." % fname)
 

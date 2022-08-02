@@ -59,9 +59,7 @@ class Find(actions.ActionPlugin):
         # Do not traverse directories in a different filesystem.
         is_same_fs = self.filesystem_id == file_stat.st_dev
         if is_same_fs or self.request.cross_devs:
-          for child_stat in self.ListDirectory(file_stat.pathspec, depth + 1):
-            yield child_stat
-
+          yield from self.ListDirectory(file_stat.pathspec, depth + 1)
       yield file_stat
 
   def TestFileContent(self, file_stat):
@@ -175,15 +173,13 @@ class Find(actions.ActionPlugin):
     self.request = request
     filters = self.BuildChecks(request)
 
-    files_checked = 0
-    for f in self.ListDirectory(request.pathspec):
+    for files_checked, f in enumerate(self.ListDirectory(request.pathspec), start=1):
       self.Progress()
 
       # Ignore this file if any of the checks fail.
       if not any((check(f) for check in filters)):
         self.SendReply(f)
 
-      files_checked += 1
       if files_checked >= self.MAX_FILES_TO_CHECK:
         return
 

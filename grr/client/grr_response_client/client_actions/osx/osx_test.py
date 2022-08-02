@@ -210,7 +210,7 @@ class ParseIfaddrsTest(OSXClientTests):
 
     sockaddrdl = self.osx.Sockaddrdl()
     sockaddrdl.sdl_family = self.osx.AF_LINK
-    sockaddrdl.sdl_data[0:len(name + mac)] = list(bytes(name + mac))
+    sockaddrdl.sdl_data[:len(name + mac)] = list(bytes(name + mac))
     sockaddrdl.sdl_nlen = len(name)
     sockaddrdl.sdl_alen = len(mac)
 
@@ -234,7 +234,7 @@ class ParseIfaddrsTest(OSXClientTests):
 
     foo_sockaddrdl = self.osx.Sockaddrdl()
     foo_sockaddrdl.sdl_family = self.osx.AF_LINK
-    foo_sockaddrdl.sdl_data[0:len(foo_mac)] = list(bytes(foo_mac))
+    foo_sockaddrdl.sdl_data[:len(foo_mac)] = list(bytes(foo_mac))
     foo_sockaddrdl.sdl_nlen = 0
     foo_sockaddrdl.sdl_alen = len(foo_mac)
 
@@ -247,7 +247,7 @@ class ParseIfaddrsTest(OSXClientTests):
 
     bar_sockaddrdl = self.osx.Sockaddrdl()
     bar_sockaddrdl.sdl_family = self.osx.AF_LINK
-    bar_sockaddrdl.sdl_data[0:len(foo_mac)] = list(bytes(bar_mac))
+    bar_sockaddrdl.sdl_data[:len(foo_mac)] = list(bytes(bar_mac))
     bar_sockaddrdl.sdl_nlen = 0
     bar_sockaddrdl.sdl_alen = len(bar_mac)
 

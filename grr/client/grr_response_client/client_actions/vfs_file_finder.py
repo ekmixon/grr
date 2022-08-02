@@ -90,8 +90,7 @@ def _GetExpandedPaths(
       follow_links=args.follow_links, pathtype=args.pathtype)
 
   for path in args.paths:
-    for expanded_path in globbing.ExpandPath(str(path), opts, heartbeat_cb):
-      yield expanded_path
+    yield from globbing.ExpandPath(str(path), opts, heartbeat_cb)
 
 
 # TODO: This is only used by artifact_collector. It should be

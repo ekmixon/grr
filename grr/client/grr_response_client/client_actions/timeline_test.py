@@ -35,7 +35,7 @@ class TimelineTest(client_test_lib.EmptyActionTest):
   def testRun(self):
     with temp.AutoTempDirPath(remove_non_empty=True) as temp_dirpath:
       for idx in range(64):
-        temp_filepath = os.path.join(temp_dirpath, "foo{}".format(idx))
+        temp_filepath = os.path.join(temp_dirpath, f"foo{idx}")
         _Touch(temp_filepath, content=os.urandom(random.randint(0, 1024)))
 
       args = rdf_timeline.TimelineArgs()

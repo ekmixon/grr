@@ -140,8 +140,8 @@ class FlowBase(object):
         timeout=timeout)
     if f.data.state != flow_pb2.ApiFlow.State.TERMINATED:
       raise errors.FlowFailedError(
-          "Flow %s (%s) failed: %s" %
-          (self.flow_id, self.client_id, f.data.context.current_state))
+          f"Flow {self.flow_id} ({self.client_id}) failed: {f.data.context.current_state}"
+      )
     return f
 
 

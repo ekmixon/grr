@@ -19,7 +19,7 @@ class UnknownClientError(Exception):
   def __init__(self, client_id: Text, cause: Exception) -> None:
     self.client_id = client_id
     self.cause = cause
-    msg = 'Client with id {} does not exist: {}'.format(client_id, cause)
+    msg = f'Client with id {client_id} does not exist: {cause}'
     super(UnknownClientError, self).__init__(msg)
 
 
@@ -28,8 +28,7 @@ class AmbiguousHostnameError(Exception):
   def __init__(self, hostname: Text, clients: List[Text]) -> None:
     self.hostname = hostname
     self.clients = clients
-    msg = 'Too many clients ({}) found for hostname: {}'.format(
-        clients, hostname)
+    msg = f'Too many clients ({clients}) found for hostname: {hostname}'
     super(AmbiguousHostnameError, self).__init__(msg)
 
 
@@ -37,7 +36,7 @@ class UnknownHostnameError(Exception):
 
   def __init__(self, hostname: Text) -> None:
     self.hostname = hostname
-    msg = 'No clients found for hostname: {}'.format(hostname)
+    msg = f'No clients found for hostname: {hostname}'
     super(UnknownHostnameError, self).__init__(msg)
 
 
@@ -46,7 +45,7 @@ class ApprovalMissingError(Exception):
   def __init__(self, client_id: Text, cause: Exception) -> None:
     self.client_id = client_id
     self.cause = cause
-    msg = 'No approval to the client {} found: {}'.format(client_id, cause)
+    msg = f'No approval to the client {client_id} found: {cause}'
     super(ApprovalMissingError, self).__init__(msg)
 
 
@@ -67,11 +66,10 @@ class FlowTimeoutError(Exception):
     self.flow_id = flow_id
     self.cause = cause
 
-    msg = 'Flow with id {} is timed out'.format(flow_id)
+    msg = f'Flow with id {flow_id} is timed out'
     url = self._build_path_to_ui()
     if url is not None:
-      msg = '{}. Results will be available at {} when the flow finishes'.format(
-          msg, url)
+      msg = f'{msg}. Results will be available at {url} when the flow finishes'
     super(FlowTimeoutError, self).__init__(msg)
 
   def _build_path_to_ui(self) -> Optional[Text]:
@@ -86,7 +84,7 @@ class NotDirectoryError(Exception):
   def __init__(self, client_id: Text, path: Text) -> None:
     self.client_id = client_id
     self.path = path
-    msg = 'Path `{}` for client {} is not a directory'.format(client_id, path)
+    msg = f'Path `{client_id}` for client {path} is not a directory'
     super(NotDirectoryError, self).__init__(msg)
 
 
@@ -94,5 +92,5 @@ class UnsupportedPathTypeError(Exception):
 
   def __init__(self, path_type: jobs_pb2.PathSpec.PathType) -> None:
     self.path_type = path_type
-    msg = 'Unsupported path type {}'.format(path_type)
+    msg = f'Unsupported path type {path_type}'
     super(UnsupportedPathTypeError, self).__init__(msg)

@@ -153,16 +153,16 @@ class RegistryTest(absltest.TestCase):
   def testStatLongUnicodeName(self):
     results = self.RunFileFinder(
         rdf_file_finder.FileFinderArgs(
-            paths=[
-                "/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{}".format(_LONG_KEY)
-            ],
+            paths=[f"/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{_LONG_KEY}"],
             pathtype="REGISTRY",
-            action=rdf_file_finder.FileFinderAction(action_type="STAT")))
+            action=rdf_file_finder.FileFinderAction(action_type="STAT"),
+        ))
 
     self.assertLen(results, 1)
     self.assertEqual(
         results[0].stat_entry.pathspec.path,
-        "/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{}".format(_LONG_KEY))
+        f"/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{_LONG_KEY}",
+    )
     self.assertEqual(results[0].stat_entry.pathspec.pathtype, "REGISTRY")
 
   def testStatKeyWithDefaultValue(self):
@@ -193,11 +193,10 @@ class RegistryTest(absltest.TestCase):
   def testDownloadUnicode(self):
     results = self.RunFileFinder(
         rdf_file_finder.FileFinderArgs(
-            paths=[
-                "/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{}".format(_LONG_KEY)
-            ],
+            paths=[f"/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{_LONG_KEY}"],
             pathtype="REGISTRY",
-            action=rdf_file_finder.FileFinderAction(action_type="DOWNLOAD")))
+            action=rdf_file_finder.FileFinderAction(action_type="DOWNLOAD"),
+        ))
 
     self.assertLen(results, 2)
     res_by_type = _GroupItemsByType(results)
@@ -206,7 +205,8 @@ class RegistryTest(absltest.TestCase):
         _DecodeDataBlob(res_by_type["DataBlob"][0]), _LONG_STRING_VALUE)
     self.assertEqual(
         res_by_type["FileFinderResult"][0].stat_entry.pathspec.path,
-        "/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{}".format(_LONG_KEY))
+        f"/HKEY_LOCAL_MACHINE/SOFTWARE/GRR_TEST/{_LONG_KEY}",
+    )
 
   def testDownloadDword(self):
     results = self.RunFileFinder(

@@ -55,7 +55,7 @@ class BuildConfigTestsBase(test_lib.GRRBaseTest):
       test_filter_map[filter_name] = config_lib.ConfigFilter
 
     with utils.Stubber(config_lib.ConfigFilter, "classes_by_name",
-                       test_filter_map):
+                         test_filter_map):
       for config_file in configs:
         errors = self.ValidateConfig(config_file)
 
@@ -68,5 +68,4 @@ class BuildConfigTestsBase(test_lib.GRRBaseTest):
             logging.info("%s:", config_entry)
             logging.info("%s", error)
 
-          self.fail("Validation of %s returned errors: %s" % (config_file,
-                                                              errors))
+          self.fail(f"Validation of {config_file} returned errors: {errors}")

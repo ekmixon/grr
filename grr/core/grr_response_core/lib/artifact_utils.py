@@ -124,7 +124,7 @@ def InterpolateKbAttributes(pattern, knowledge_base):
       var_name = str(var_id).lower()
 
       if var_name not in scope_type.type_infos:
-        unknown_attr_names.add("{}.{}".format(scope_name, var_name))
+        unknown_attr_names.add(f"{scope_name}.{var_name}")
         continue
 
   if unknown_attr_names:
@@ -160,7 +160,7 @@ def InterpolateKbAttributes(pattern, knowledge_base):
 
         value = getattr(kb_struct, attr_name)
         if not value:
-          scope_missing_attr_names.add("{}.{}".format(scope_name, attr_name))
+          scope_missing_attr_names.add(f"{scope_name}.{attr_name}")
           continue
 
         bindings[var_id] = value
@@ -258,8 +258,7 @@ def ExpandWindowsEnvironmentVariables(data_string, knowledge_base):
     components.append(data_string[offset:match.start()])
 
     # KB environment variables are prefixed with environ_.
-    kb_value = getattr(knowledge_base, "environ_%s" % match.group(1).lower(),
-                       None)
+    kb_value = getattr(knowledge_base, f"environ_{match.group(1).lower()}", None)
     if isinstance(kb_value, str) and kb_value:
       components.append(kb_value)
     else:
