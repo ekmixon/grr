@@ -5,7 +5,7 @@
 #
 #   docker build -t grrdocker/xenial -f Dockerfile.xenial .
 
-FROM ubuntu:xenial
+FROM ubuntu:xenial-20210416
 
 LABEL maintainer="grr-dev@googlegroups.com"
 
