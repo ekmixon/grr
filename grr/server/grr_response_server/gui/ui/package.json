@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.1001.4",
-    "@angular/cli": "~10.1.4",
+    "@angular/cli": "~14.2.12",
     "@angular/compiler-cli": "~10.1.4",
     "@angular/language-service": "~10.1.4",
     "@types/deep-diff": "^1.0.0",
