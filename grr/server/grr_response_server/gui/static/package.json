@@ -26,7 +26,7 @@
     "files-exist": "^1.1.0",
     "google-closure-compiler": "20200614.0.0",
     "google-closure-library": "20200614.0.0",
-    "gulp": "^4.0.2",
+    "gulp": "^5.0.0",
     "gulp-angular-templatecache": "^3.0.0",
     "gulp-closure-compiler": "^0.4.0",
     "gulp-closure-deps": "^0.4.0",
